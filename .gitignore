@@ -40,3 +40,13 @@ doc/api/
 .vscode/
 .DS_Store
 *.iml
+
+# Firebase local tools and generated files
+firebase/node_modules/
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+emulator-data/
+# Generated Kotlin Gradle files
+/android/.kotlin/

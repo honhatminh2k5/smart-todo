@@ -1,0 +1,799 @@
+{
+  "description": "Dữ liệu mẫu chỉ dùng cho Firestore Emulator; không có mật khẩu hay dữ liệu cá nhân thật.",
+  "documents": [
+    {
+      "path": "users/uidAn",
+      "data": {
+        "displayName": "An Nguyễn",
+        "email": "an@example.com",
+        "createdAt": "2026-10-01T08:00:00+07:00",
+        "updatedAt": "2026-10-22T09:00:00+07:00"
+      }
+    },
+    {
+      "path": "users/uidBinh",
+      "data": {
+        "displayName": "Bình Trần",
+        "email": "binh@example.com",
+        "createdAt": "2026-10-01T08:00:00+07:00",
+        "updatedAt": "2026-10-22T09:00:00+07:00"
+      }
+    },
+    {
+      "path": "users/uidChi",
+      "data": {
+        "displayName": "Chi Lê",
+        "email": "chi@example.com",
+        "createdAt": "2026-10-01T08:00:00+07:00",
+        "updatedAt": "2026-10-22T09:00:00+07:00"
+      }
+    },
+    {
+      "path": "users/uidDung",
+      "data": {
+        "displayName": "Dũng Phạm",
+        "email": "dung@example.com",
+        "createdAt": "2026-10-01T08:00:00+07:00",
+        "updatedAt": "2026-10-22T09:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb",
+      "data": {
+        "name": "Đồ án Web",
+        "description": "Công việc của nhóm đồ án.",
+        "ownerId": "uidAn",
+        "memberIds": [
+          "uidAn",
+          "uidBinh",
+          "uidChi"
+        ],
+        "archivedAt": null,
+        "createdAt": "2026-10-02T08:00:00+07:00",
+        "updatedAt": "2026-10-22T16:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/members/uidAn",
+      "data": {
+        "role": "owner",
+        "displayName": "An Nguyễn",
+        "email": "an@example.com",
+        "joinedAt": "2026-10-02T08:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/members/uidBinh",
+      "data": {
+        "role": "member",
+        "displayName": "Bình Trần",
+        "email": "binh@example.com",
+        "joinedAt": "2026-10-02T08:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/members/uidChi",
+      "data": {
+        "role": "member",
+        "displayName": "Chi Lê",
+        "email": "chi@example.com",
+        "joinedAt": "2026-10-02T08:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardStudy",
+      "data": {
+        "name": "Học tập",
+        "description": "Kế hoạch học tập và ôn thi.",
+        "ownerId": "uidBinh",
+        "memberIds": [
+          "uidBinh",
+          "uidChi"
+        ],
+        "archivedAt": null,
+        "createdAt": "2026-10-03T08:30:00+07:00",
+        "updatedAt": "2026-10-22T16:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardStudy/members/uidBinh",
+      "data": {
+        "role": "owner",
+        "displayName": "Bình Trần",
+        "email": "binh@example.com",
+        "joinedAt": "2026-10-03T08:30:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardStudy/members/uidChi",
+      "data": {
+        "role": "member",
+        "displayName": "Chi Lê",
+        "email": "chi@example.com",
+        "joinedAt": "2026-10-03T08:30:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardPersonal",
+      "data": {
+        "name": "Cá nhân",
+        "description": "Các công việc cá nhân.",
+        "ownerId": "uidChi",
+        "memberIds": [
+          "uidChi"
+        ],
+        "archivedAt": null,
+        "createdAt": "2026-10-04T10:00:00+07:00",
+        "updatedAt": "2026-10-22T16:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardPersonal/members/uidChi",
+      "data": {
+        "role": "owner",
+        "displayName": "Chi Lê",
+        "email": "chi@example.com",
+        "joinedAt": "2026-10-04T10:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/invitations/dung@example.com",
+      "data": {
+        "email": "dung@example.com",
+        "normalizedEmail": "dung@example.com",
+        "invitedBy": "uidAn",
+        "inviterName": "An Nguyễn",
+        "boardName": "Đồ án Web",
+        "status": "pending",
+        "createdAt": "2026-10-20T11:00:00+07:00",
+        "updatedAt": "2026-10-20T11:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/labels/lbUrgent",
+      "data": {
+        "name": "Gấp",
+        "color": "#EF4444",
+        "createdAt": "2026-10-05T08:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/labels/lbCourse",
+      "data": {
+        "name": "Môn học",
+        "color": "#3B82F6",
+        "createdAt": "2026-10-05T08:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardStudy/labels/lbExam",
+      "data": {
+        "name": "Ôn thi",
+        "color": "#F59E0B",
+        "createdAt": "2026-10-05T08:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardStudy/labels/lbStudy",
+      "data": {
+        "name": "Học tập",
+        "color": "#10B981",
+        "createdAt": "2026-10-05T08:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardPersonal/labels/lbPersonal",
+      "data": {
+        "name": "Cá nhân",
+        "color": "#8B5CF6",
+        "createdAt": "2026-10-05T08:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/lists/webTodo",
+      "data": {
+        "name": "Cần làm",
+        "position": 1024.0,
+        "archivedAt": null,
+        "createdAt": "2026-10-05T09:00:00+07:00",
+        "updatedAt": "2026-10-22T09:30:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/lists/webDoing",
+      "data": {
+        "name": "Đang thực hiện",
+        "position": 2048.0,
+        "archivedAt": null,
+        "createdAt": "2026-10-05T09:00:00+07:00",
+        "updatedAt": "2026-10-22T09:30:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/lists/webDone",
+      "data": {
+        "name": "Hoàn thành",
+        "position": 3072.0,
+        "archivedAt": null,
+        "createdAt": "2026-10-05T09:00:00+07:00",
+        "updatedAt": "2026-10-22T09:30:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardStudy/lists/studyTodo",
+      "data": {
+        "name": "Cần ôn tập",
+        "position": 1024.0,
+        "archivedAt": null,
+        "createdAt": "2026-10-05T09:00:00+07:00",
+        "updatedAt": "2026-10-22T09:30:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardStudy/lists/studyDone",
+      "data": {
+        "name": "Đã hoàn thành",
+        "position": 2048.0,
+        "archivedAt": null,
+        "createdAt": "2026-10-05T09:00:00+07:00",
+        "updatedAt": "2026-10-22T09:30:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardPersonal/lists/personalTodo",
+      "data": {
+        "name": "Việc cá nhân",
+        "position": 1024.0,
+        "archivedAt": null,
+        "createdAt": "2026-10-05T09:00:00+07:00",
+        "updatedAt": "2026-10-22T09:30:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardPersonal/lists/personalOld",
+      "data": {
+        "name": "Việc đã lưu trữ",
+        "position": 2048.0,
+        "archivedAt": "2026-10-21T10:00:00+07:00",
+        "createdAt": "2026-10-05T09:00:00+07:00",
+        "updatedAt": "2026-10-22T09:30:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/cards/webCard01",
+      "data": {
+        "boardId": "boardWeb",
+        "listId": "webTodo",
+        "title": "Hoàn thiện sơ đồ database",
+        "description": "Chốt schema Firestore và các quy tắc truy cập.",
+        "position": 1024.0,
+        "isCompleted": false,
+        "assigneeIds": [
+          "uidAn"
+        ],
+        "labelIds": [
+          "lbUrgent",
+          "lbCourse"
+        ],
+        "dueAt": "2026-10-21T17:00:00+07:00",
+        "archivedAt": null,
+        "commentCount": 2,
+        "checklistTotal": 2,
+        "checklistDone": 1,
+        "createdBy": "uidAn",
+        "createdAt": "2026-10-20T08:00:00+07:00",
+        "updatedAt": "2026-10-22T15:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/cards/webCard01/checklist/webCard01check01",
+      "data": {
+        "title": "Xác định collection",
+        "isCompleted": true,
+        "position": 1024.0,
+        "createdAt": "2026-10-20T08:10:00+07:00",
+        "updatedAt": "2026-10-21T08:10:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/cards/webCard01/checklist/webCard01check02",
+      "data": {
+        "title": "Viết security rules",
+        "isCompleted": false,
+        "position": 2048.0,
+        "createdAt": "2026-10-20T08:10:00+07:00",
+        "updatedAt": "2026-10-21T08:10:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/cards/webCard01/comments/webCard01comment01",
+      "data": {
+        "authorId": "uidBinh",
+        "authorName": "Bình Trần",
+        "body": "Mình sẽ rà soát sơ đồ.",
+        "createdAt": "2026-10-21T09:00:00+07:00",
+        "updatedAt": "2026-10-21T09:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/cards/webCard01/comments/webCard01comment02",
+      "data": {
+        "authorId": "uidAn",
+        "authorName": "An Nguyễn",
+        "body": "Cảm ơn, kiểm tra cả index nhé.",
+        "createdAt": "2026-10-21T09:00:00+07:00",
+        "updatedAt": "2026-10-21T09:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/cards/webCard02",
+      "data": {
+        "boardId": "boardWeb",
+        "listId": "webTodo",
+        "title": "Viết đặc tả API",
+        "description": "Liệt kê truy vấn và thao tác ghi.",
+        "position": 2048.0,
+        "isCompleted": false,
+        "assigneeIds": [
+          "uidBinh"
+        ],
+        "labelIds": [
+          "lbCourse"
+        ],
+        "dueAt": "2026-10-23T21:00:00+07:00",
+        "archivedAt": null,
+        "commentCount": 0,
+        "checklistTotal": 1,
+        "checklistDone": 0,
+        "createdBy": "uidAn",
+        "createdAt": "2026-10-20T08:00:00+07:00",
+        "updatedAt": "2026-10-22T15:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/cards/webCard02/checklist/webCard02check01",
+      "data": {
+        "title": "Liệt kê truy vấn",
+        "isCompleted": false,
+        "position": 1024.0,
+        "createdAt": "2026-10-20T08:10:00+07:00",
+        "updatedAt": "2026-10-21T08:10:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/cards/webCard03",
+      "data": {
+        "boardId": "boardWeb",
+        "listId": "webTodo",
+        "title": "Chuẩn bị slide thuyết trình",
+        "description": "",
+        "position": 3072.0,
+        "isCompleted": false,
+        "assigneeIds": [
+          "uidChi"
+        ],
+        "labelIds": [],
+        "dueAt": "2026-10-29T09:00:00+07:00",
+        "archivedAt": null,
+        "commentCount": 1,
+        "checklistTotal": 0,
+        "checklistDone": 0,
+        "createdBy": "uidChi",
+        "createdAt": "2026-10-20T08:00:00+07:00",
+        "updatedAt": "2026-10-22T15:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/cards/webCard03/comments/webCard03comment01",
+      "data": {
+        "authorId": "uidChi",
+        "authorName": "Chi Lê",
+        "body": "Mình sẽ chuẩn bị phần demo.",
+        "createdAt": "2026-10-21T09:00:00+07:00",
+        "updatedAt": "2026-10-21T09:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/cards/webCard04",
+      "data": {
+        "boardId": "boardWeb",
+        "listId": "webDoing",
+        "title": "Tích hợp Firebase Authentication",
+        "description": "",
+        "position": 1024.0,
+        "isCompleted": false,
+        "assigneeIds": [
+          "uidAn",
+          "uidBinh"
+        ],
+        "labelIds": [
+          "lbUrgent"
+        ],
+        "dueAt": null,
+        "archivedAt": null,
+        "commentCount": 0,
+        "checklistTotal": 2,
+        "checklistDone": 2,
+        "createdBy": "uidBinh",
+        "createdAt": "2026-10-20T08:00:00+07:00",
+        "updatedAt": "2026-10-22T15:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/cards/webCard04/checklist/webCard04check01",
+      "data": {
+        "title": "Kiểm tra login",
+        "isCompleted": true,
+        "position": 1024.0,
+        "createdAt": "2026-10-20T08:10:00+07:00",
+        "updatedAt": "2026-10-21T08:10:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/cards/webCard04/checklist/webCard04check02",
+      "data": {
+        "title": "Kiểm tra logout",
+        "isCompleted": true,
+        "position": 2048.0,
+        "createdAt": "2026-10-20T08:10:00+07:00",
+        "updatedAt": "2026-10-21T08:10:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/cards/webCard05",
+      "data": {
+        "boardId": "boardWeb",
+        "listId": "webDoing",
+        "title": "Thiết kế giao diện board",
+        "description": "",
+        "position": 2048.0,
+        "isCompleted": false,
+        "assigneeIds": [
+          "uidChi"
+        ],
+        "labelIds": [],
+        "dueAt": "2026-10-25T14:00:00+07:00",
+        "archivedAt": null,
+        "commentCount": 0,
+        "checklistTotal": 0,
+        "checklistDone": 0,
+        "createdBy": "uidChi",
+        "createdAt": "2026-10-20T08:00:00+07:00",
+        "updatedAt": "2026-10-22T15:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/cards/webCard06",
+      "data": {
+        "boardId": "boardWeb",
+        "listId": "webDone",
+        "title": "Tạo repository GitHub",
+        "description": "",
+        "position": 1024.0,
+        "isCompleted": true,
+        "assigneeIds": [
+          "uidAn"
+        ],
+        "labelIds": [],
+        "dueAt": null,
+        "archivedAt": null,
+        "commentCount": 1,
+        "checklistTotal": 0,
+        "checklistDone": 0,
+        "createdBy": "uidAn",
+        "createdAt": "2026-10-20T08:00:00+07:00",
+        "updatedAt": "2026-10-22T15:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardWeb/cards/webCard06/comments/webCard06comment01",
+      "data": {
+        "authorId": "uidAn",
+        "authorName": "An Nguyễn",
+        "body": "Repository đã sẵn sàng.",
+        "createdAt": "2026-10-21T09:00:00+07:00",
+        "updatedAt": "2026-10-21T09:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardStudy/cards/studyCard07",
+      "data": {
+        "boardId": "boardStudy",
+        "listId": "studyTodo",
+        "title": "Ôn cấu trúc dữ liệu",
+        "description": "Ôn cây, đồ thị và bảng băm.",
+        "position": 1024.0,
+        "isCompleted": false,
+        "assigneeIds": [
+          "uidBinh"
+        ],
+        "labelIds": [
+          "lbExam",
+          "lbStudy"
+        ],
+        "dueAt": "2026-10-24T08:00:00+07:00",
+        "archivedAt": null,
+        "commentCount": 0,
+        "checklistTotal": 2,
+        "checklistDone": 0,
+        "createdBy": "uidBinh",
+        "createdAt": "2026-10-20T08:00:00+07:00",
+        "updatedAt": "2026-10-22T15:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardStudy/cards/studyCard07/checklist/studyCard07check01",
+      "data": {
+        "title": "Ôn cây nhị phân",
+        "isCompleted": false,
+        "position": 1024.0,
+        "createdAt": "2026-10-20T08:10:00+07:00",
+        "updatedAt": "2026-10-21T08:10:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardStudy/cards/studyCard07/checklist/studyCard07check02",
+      "data": {
+        "title": "Ôn đồ thị",
+        "isCompleted": false,
+        "position": 2048.0,
+        "createdAt": "2026-10-20T08:10:00+07:00",
+        "updatedAt": "2026-10-21T08:10:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardStudy/cards/studyCard08",
+      "data": {
+        "boardId": "boardStudy",
+        "listId": "studyTodo",
+        "title": "Làm bài tập SQL",
+        "description": "",
+        "position": 2048.0,
+        "isCompleted": false,
+        "assigneeIds": [
+          "uidChi"
+        ],
+        "labelIds": [
+          "lbStudy"
+        ],
+        "dueAt": "2026-10-26T20:00:00+07:00",
+        "archivedAt": null,
+        "commentCount": 0,
+        "checklistTotal": 0,
+        "checklistDone": 0,
+        "createdBy": "uidBinh",
+        "createdAt": "2026-10-20T08:00:00+07:00",
+        "updatedAt": "2026-10-22T15:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardStudy/cards/studyCard09",
+      "data": {
+        "boardId": "boardStudy",
+        "listId": "studyTodo",
+        "title": "Đọc chương kiểm thử phần mềm",
+        "description": "",
+        "position": 3072.0,
+        "isCompleted": false,
+        "assigneeIds": [
+          "uidBinh",
+          "uidChi"
+        ],
+        "labelIds": [],
+        "dueAt": null,
+        "archivedAt": null,
+        "commentCount": 0,
+        "checklistTotal": 0,
+        "checklistDone": 0,
+        "createdBy": "uidChi",
+        "createdAt": "2026-10-20T08:00:00+07:00",
+        "updatedAt": "2026-10-22T15:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardStudy/cards/studyCard10",
+      "data": {
+        "boardId": "boardStudy",
+        "listId": "studyDone",
+        "title": "Nộp bài XML và XSD",
+        "description": "",
+        "position": 1024.0,
+        "isCompleted": true,
+        "assigneeIds": [
+          "uidChi"
+        ],
+        "labelIds": [],
+        "dueAt": null,
+        "archivedAt": null,
+        "commentCount": 0,
+        "checklistTotal": 2,
+        "checklistDone": 2,
+        "createdBy": "uidChi",
+        "createdAt": "2026-10-20T08:00:00+07:00",
+        "updatedAt": "2026-10-22T15:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardStudy/cards/studyCard10/checklist/studyCard10check01",
+      "data": {
+        "title": "Tạo XML",
+        "isCompleted": true,
+        "position": 1024.0,
+        "createdAt": "2026-10-20T08:10:00+07:00",
+        "updatedAt": "2026-10-21T08:10:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardStudy/cards/studyCard10/checklist/studyCard10check02",
+      "data": {
+        "title": "Tạo XSD",
+        "isCompleted": true,
+        "position": 2048.0,
+        "createdAt": "2026-10-20T08:10:00+07:00",
+        "updatedAt": "2026-10-21T08:10:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardStudy/cards/studyCard11",
+      "data": {
+        "boardId": "boardStudy",
+        "listId": "studyDone",
+        "title": "Hoàn thành bài Python",
+        "description": "",
+        "position": 2048.0,
+        "isCompleted": true,
+        "assigneeIds": [
+          "uidBinh"
+        ],
+        "labelIds": [
+          "lbStudy"
+        ],
+        "dueAt": null,
+        "archivedAt": null,
+        "commentCount": 1,
+        "checklistTotal": 0,
+        "checklistDone": 0,
+        "createdBy": "uidBinh",
+        "createdAt": "2026-10-20T08:00:00+07:00",
+        "updatedAt": "2026-10-22T15:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardStudy/cards/studyCard11/comments/studyCard11comment01",
+      "data": {
+        "authorId": "uidBinh",
+        "authorName": "Bình Trần",
+        "body": "Đã nộp trên LMS.",
+        "createdAt": "2026-10-21T09:00:00+07:00",
+        "updatedAt": "2026-10-21T09:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardPersonal/cards/personalCard12",
+      "data": {
+        "boardId": "boardPersonal",
+        "listId": "personalTodo",
+        "title": "Sắp xếp lịch tuần",
+        "description": "",
+        "position": 1024.0,
+        "isCompleted": false,
+        "assigneeIds": [
+          "uidChi"
+        ],
+        "labelIds": [
+          "lbPersonal"
+        ],
+        "dueAt": "2026-10-23T19:30:00+07:00",
+        "archivedAt": null,
+        "commentCount": 0,
+        "checklistTotal": 0,
+        "checklistDone": 0,
+        "createdBy": "uidChi",
+        "createdAt": "2026-10-20T08:00:00+07:00",
+        "updatedAt": "2026-10-22T15:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardPersonal/cards/personalCard13",
+      "data": {
+        "boardId": "boardPersonal",
+        "listId": "personalTodo",
+        "title": "Đọc tài liệu dự án",
+        "description": "",
+        "position": 2048.0,
+        "isCompleted": false,
+        "assigneeIds": [
+          "uidChi"
+        ],
+        "labelIds": [],
+        "dueAt": null,
+        "archivedAt": null,
+        "commentCount": 0,
+        "checklistTotal": 1,
+        "checklistDone": 0,
+        "createdBy": "uidChi",
+        "createdAt": "2026-10-20T08:00:00+07:00",
+        "updatedAt": "2026-10-22T15:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardPersonal/cards/personalCard13/checklist/personalCard13check01",
+      "data": {
+        "title": "Đọc schema",
+        "isCompleted": false,
+        "position": 1024.0,
+        "createdAt": "2026-10-20T08:10:00+07:00",
+        "updatedAt": "2026-10-21T08:10:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardPersonal/cards/personalCard14",
+      "data": {
+        "boardId": "boardPersonal",
+        "listId": "personalTodo",
+        "title": "Sao lưu tệp quan trọng",
+        "description": "",
+        "position": 3072.0,
+        "isCompleted": false,
+        "assigneeIds": [
+          "uidChi"
+        ],
+        "labelIds": [
+          "lbPersonal"
+        ],
+        "dueAt": "2026-10-30T17:00:00+07:00",
+        "archivedAt": null,
+        "commentCount": 0,
+        "checklistTotal": 0,
+        "checklistDone": 0,
+        "createdBy": "uidChi",
+        "createdAt": "2026-10-20T08:00:00+07:00",
+        "updatedAt": "2026-10-22T15:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardPersonal/cards/personalCard15",
+      "data": {
+        "boardId": "boardPersonal",
+        "listId": "personalTodo",
+        "title": "Kiểm tra thiết bị",
+        "description": "",
+        "position": 4096.0,
+        "isCompleted": true,
+        "assigneeIds": [
+          "uidChi"
+        ],
+        "labelIds": [],
+        "dueAt": null,
+        "archivedAt": null,
+        "commentCount": 0,
+        "checklistTotal": 0,
+        "checklistDone": 0,
+        "createdBy": "uidChi",
+        "createdAt": "2026-10-20T08:00:00+07:00",
+        "updatedAt": "2026-10-22T15:00:00+07:00"
+      }
+    },
+    {
+      "path": "boards/boardPersonal/cards/personalCard16",
+      "data": {
+        "boardId": "boardPersonal",
+        "listId": "personalOld",
+        "title": "Dọn dẹp ghi chú cũ",
+        "description": "",
+        "position": 1024.0,
+        "isCompleted": false,
+        "assigneeIds": [],
+        "labelIds": [],
+        "dueAt": "2026-10-20T12:00:00+07:00",
+        "archivedAt": "2026-10-21T10:00:00+07:00",
+        "commentCount": 0,
+        "checklistTotal": 0,
+        "checklistDone": 0,
+        "createdBy": "uidChi",
+        "createdAt": "2026-10-20T08:00:00+07:00",
+        "updatedAt": "2026-10-22T15:00:00+07:00"
+      }
+    }
+  ]
+}

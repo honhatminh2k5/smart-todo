@@ -1,0 +1,20 @@
+{
+  "name": "smart-todo-firebase-tools",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "validate-seed": "node seed/validate-seed.mjs",
+    "seed": "node seed/seed.mjs",
+    "test:rules": "node --test tests/firestore.rules.test.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "firebase": "^12.19.0"
+  }
+}

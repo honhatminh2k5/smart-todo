@@ -1,0 +1,439 @@
+rules_version = '2';
+
+// =============================================================================
+// Smart Todo – Firestore Security Rules  (v1.0)
+//
+// Đọc kèm: docs/firestore-schema.md  và  docs/firestore-security.md
+//
+// Nguyên tắc:
+//   1. Mặc định TỪ CHỐI mọi thứ không được cho phép rõ ràng bên dưới.
+//   2. Quyền xem/sửa dữ liệu board dựa vào  boards/{boardId}.memberIds  (thành viên)
+//      và  boards/{boardId}.ownerId  (Owner). Xem quyết định D2 trong schema.
+//   3. Rules KHÔNG phải bộ lọc: truy vấn phải tự đặt điều kiện khớp với rule
+//      (ví dụ: memberIds array-contains uid), nếu không sẽ bị từ chối cả truy vấn.
+//   4. Mọi tờ hồ sơ tạo mới/sửa phải đúng kiểu dữ liệu và độ dài theo từ điển dữ liệu.
+// =============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------------------
+    // HÀM DÙNG CHUNG
+    // -------------------------------------------------------------------------
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function myUid() {
+      return request.auth.uid;
+    }
+
+    // Email của người đang đăng nhập, viết thường (khớp normalizedEmail của lời mời).
+    function myEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    function boardPath(boardId) {
+      return /databases/$(database)/documents/boards/$(boardId);
+    }
+
+    function boardData(boardId) {
+      return get(boardPath(boardId)).data;
+    }
+
+    // Đường dẫn lời mời dành cho email của người đang đăng nhập, trong một board.
+    function myInvitationPath(boardId) {
+      return /databases/$(database)/documents/boards/$(boardId)/invitations/$(myEmail());
+    }
+
+    function isMember(boardId) {
+      return signedIn() && myUid() in boardData(boardId).memberIds;
+    }
+
+    function isOwner(boardId) {
+      return signedIn() && boardData(boardId).ownerId == myUid();
+    }
+
+    // Chuỗi có độ dài trong [min, max].
+    function isText(v, min, max) {
+      return v is string && v.size() >= min && v.size() <= max;
+    }
+
+    function isTimestampOrNull(v) {
+      return v == null || v is timestamp;
+    }
+
+    // Document (sau khi ghi) có đúng và đủ các trường này, không thừa, không thiếu.
+    function exactKeys(keys) {
+      return request.resource.data.keys().hasOnly(keys)
+          && request.resource.data.keys().hasAll(keys);
+    }
+
+    // Khi update: chỉ những trường này được thay đổi giá trị.
+    function onlyChanges(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    // Khi update: archivedAt được giữ nguyên, hoặc khôi phục (null), hoặc lưu trữ ngay lúc này.
+    function archiveOk() {
+      return request.resource.data.archivedAt == resource.data.archivedAt
+          || request.resource.data.archivedAt == null
+          || request.resource.data.archivedAt == request.time;
+    }
+
+    // -------------------------------------------------------------------------
+    // users/{uid}: hồ sơ cá nhân. Chỉ chủ tài khoản được đọc/ghi hồ sơ của mình.
+    // -------------------------------------------------------------------------
+    match /users/{uid} {
+
+      allow get: if signedIn() && uid == myUid();
+
+      allow create: if signedIn() && uid == myUid()
+        && exactKeys(['displayName', 'email', 'createdAt', 'updatedAt'])
+        && isText(request.resource.data.displayName, 1, 100)
+        && request.resource.data.email is string
+        && request.resource.data.email.lower() == myEmail()
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if signedIn() && uid == myUid()
+        && onlyChanges(['displayName', 'updatedAt'])
+        && isText(request.resource.data.displayName, 1, 100)
+        && request.resource.data.updatedAt == request.time;
+
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // boards/{boardId}
+    // -------------------------------------------------------------------------
+    match /boards/{boardId} {
+
+      // (1) Owner sửa tên, mô tả, lưu trữ / khôi phục.
+      function ownerEditsInfo() {
+        return resource.data.ownerId == myUid()
+          && onlyChanges(['name', 'description', 'archivedAt', 'updatedAt'])
+          && isText(request.resource.data.name, 1, 100)
+          && isText(request.resource.data.description, 0, 500)
+          && archiveOk()
+          && request.resource.data.updatedAt == request.time;
+      }
+
+      // (2) Owner xóa thành viên: memberIds chỉ được BỚT, Owner luôn còn trong danh sách.
+      function ownerRemovesMember() {
+        return resource.data.ownerId == myUid()
+          && onlyChanges(['memberIds'])
+          && request.resource.data.memberIds.toSet()
+               .difference(resource.data.memberIds.toSet()).size() == 0
+          && resource.data.ownerId in request.resource.data.memberIds
+          && request.resource.data.memberIds.size() < resource.data.memberIds.size();
+      }
+
+      // (3) Member tự rời board. Owner không được rời.
+      function memberLeaves() {
+        return resource.data.ownerId != myUid()
+          && myUid() in resource.data.memberIds
+          && onlyChanges(['memberIds'])
+          && request.resource.data.memberIds.toSet()
+               == resource.data.memberIds.toSet().difference([myUid()].toSet());
+      }
+
+      // (4) Người được mời tự thêm MÌNH (và chỉ mình) vào board,
+      //     với điều kiện đang có lời mời 'pending' gửi tới email của họ.
+      function inviteeJoins() {
+        return !(myUid() in resource.data.memberIds)
+          && onlyChanges(['memberIds'])
+          && request.resource.data.memberIds.toSet()
+               == resource.data.memberIds.toSet().union([myUid()].toSet())
+          && get(myInvitationPath(boardId)).data.status == 'pending';
+      }
+
+      // Chỉ thành viên mới thấy board. Truy vấn: where('memberIds', arrayContains: uid).
+      allow read: if signedIn() && myUid() in resource.data.memberIds;
+
+      // Ai đăng nhập cũng tạo được board của mình, và tự là Owner duy nhất lúc đầu.
+      allow create: if signedIn()
+        && exactKeys(['name', 'description', 'ownerId', 'memberIds',
+                      'archivedAt', 'createdAt', 'updatedAt'])
+        && isText(request.resource.data.name, 1, 100)
+        && isText(request.resource.data.description, 0, 500)
+        && request.resource.data.ownerId == myUid()
+        && request.resource.data.memberIds == [myUid()]
+        && request.resource.data.archivedAt == null
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      // Board không bị xóa; chỉ lưu trữ (UC03).
+      allow delete: if false;
+
+      // Bốn kiểu cập nhật hợp lệ (mỗi kiểu đúng một việc, không được trộn).
+      allow update: if signedIn()
+        && (ownerEditsInfo() || ownerRemovesMember() || memberLeaves() || inviteeJoins());
+
+      // -----------------------------------------------------------------------
+      // boards/{boardId}/members/{memberUid}: để HIỂN THỊ (tên, email, vai trò).
+      // -----------------------------------------------------------------------
+      match /members/{memberUid} {
+
+        allow read: if isMember(boardId);
+
+        // Hai cách tạo hợp lệ, luôn là tờ hồ sơ của chính mình:
+        //  - Owner tự thêm mình ngay lúc tạo board (cùng batch với việc tạo board)
+        //  - Người được mời thêm mình sau khi chấp nhận lời mời
+        allow create: if signedIn() && memberUid == myUid()
+          && exactKeys(['role', 'displayName', 'email', 'joinedAt'])
+          && isText(request.resource.data.displayName, 1, 100)
+          && request.resource.data.email is string
+          && request.resource.data.email.lower() == myEmail()
+          && request.resource.data.joinedAt == request.time
+          && (
+               (request.resource.data.role == 'owner'
+                  && getAfter(boardPath(boardId)).data.ownerId == myUid())
+               ||
+               (request.resource.data.role == 'member'
+                  && get(myInvitationPath(boardId)).data.status == 'pending')
+             );
+
+        allow update: if false;
+
+        // Owner xóa được Member (không xóa được chính Owner); Member tự xóa mình (rời board).
+        allow delete: if signedIn() && (
+               (isOwner(boardId) && memberUid != boardData(boardId).ownerId)
+            || (memberUid == myUid() && boardData(boardId).ownerId != myUid())
+          );
+      }
+
+      // -----------------------------------------------------------------------
+      // boards/{boardId}/invitations/{invitationId}   (id = email viết thường)
+      // Người được mời đọc lời mời của mình qua rule collection-group ở cuối file.
+      // -----------------------------------------------------------------------
+      match /invitations/{invitationId} {
+
+        function invitationCoreOk() {
+          return exactKeys(['email', 'normalizedEmail', 'invitedBy', 'inviterName',
+                            'boardName', 'status', 'createdAt', 'updatedAt'])
+            && request.resource.data.email is string
+            && request.resource.data.email.size() <= 254
+            && request.resource.data.email.matches('^[^@ ]+@[^@ ]+[.][^@ ]+$')
+            && request.resource.data.normalizedEmail == invitationId
+            && request.resource.data.normalizedEmail == request.resource.data.email.lower()
+            && request.resource.data.invitedBy == myUid()
+            && isText(request.resource.data.inviterName, 1, 100)
+            && request.resource.data.boardName == boardData(boardId).name
+            && request.resource.data.status == 'pending'
+            && request.resource.data.updatedAt == request.time;
+        }
+
+        // Người được mời chấp nhận / từ chối (chỉ đổi status, và chỉ khi đang 'pending').
+        function inviteeResponds() {
+          return signedIn()
+            && invitationId == myEmail()
+            && resource.data.status == 'pending'
+            && request.resource.data.status in ['accepted', 'declined']
+            && onlyChanges(['status', 'updatedAt'])
+            && request.resource.data.updatedAt == request.time;
+        }
+
+        allow read: if isOwner(boardId);
+
+        allow create: if isOwner(boardId)
+          && invitationCoreOk()
+          && request.resource.data.createdAt == request.time;
+
+        // Owner mời lại (đặt lại về 'pending')  HOẶC  người được mời trả lời.
+        allow update: if (isOwner(boardId)
+                          && invitationCoreOk()
+                          && (request.resource.data.createdAt == resource.data.createdAt
+                              || request.resource.data.createdAt == request.time))
+                      || inviteeResponds();
+
+        allow delete: if isOwner(boardId);
+
+      }
+
+      // -----------------------------------------------------------------------
+      // boards/{boardId}/labels/{labelId}
+      // -----------------------------------------------------------------------
+      match /labels/{labelId} {
+
+        allow read: if isMember(boardId);
+
+        allow create: if isMember(boardId)
+          && exactKeys(['name', 'color', 'createdAt'])
+          && isText(request.resource.data.name, 1, 50)
+          && request.resource.data.color is string
+          && request.resource.data.color.matches('^#[0-9A-Fa-f]{6}$')
+          && request.resource.data.createdAt == request.time;
+
+        allow update: if isMember(boardId)
+          && onlyChanges(['name', 'color'])
+          && isText(request.resource.data.name, 1, 50)
+          && request.resource.data.color is string
+          && request.resource.data.color.matches('^#[0-9A-Fa-f]{6}$');
+
+        allow delete: if isMember(boardId);
+      }
+
+      // -----------------------------------------------------------------------
+      // boards/{boardId}/lists/{listId}   (list chỉ lưu trữ, không xóa)
+      // -----------------------------------------------------------------------
+      match /lists/{listId} {
+
+        allow read: if isMember(boardId);
+
+        allow create: if isMember(boardId)
+          && exactKeys(['name', 'position', 'archivedAt', 'createdAt', 'updatedAt'])
+          && isText(request.resource.data.name, 1, 100)
+          && request.resource.data.position is number
+          && request.resource.data.archivedAt == null
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+
+        allow update: if isMember(boardId)
+          && onlyChanges(['name', 'position', 'archivedAt', 'updatedAt'])
+          && isText(request.resource.data.name, 1, 100)
+          && request.resource.data.position is number
+          && archiveOk()
+          && request.resource.data.updatedAt == request.time;
+
+        allow delete: if false;
+      }
+
+      // -----------------------------------------------------------------------
+      // boards/{boardId}/cards/{cardId}
+      // -----------------------------------------------------------------------
+      match /cards/{cardId} {
+
+        function cardKeys() {
+          return ['boardId', 'listId', 'title', 'description', 'position',
+                  'isCompleted', 'assigneeIds', 'labelIds', 'dueAt', 'archivedAt',
+                  'commentCount', 'checklistTotal', 'checklistDone',
+                  'createdBy', 'createdAt', 'updatedAt'];
+        }
+
+        function cardValid() {
+          let d = request.resource.data;
+          return d.boardId is string
+            && d.listId is string && d.listId.size() > 0
+            && isText(d.title, 1, 200)
+            && isText(d.description, 0, 5000)
+            && d.position is number
+            && d.isCompleted is bool
+            && d.assigneeIds is list
+            && d.assigneeIds.hasOnly(boardData(boardId).memberIds)
+            && d.labelIds is list
+            && isTimestampOrNull(d.dueAt)
+            && d.commentCount is int && d.commentCount >= 0
+            && d.checklistTotal is int && d.checklistTotal >= 0
+            && d.checklistDone is int && d.checklistDone >= 0
+            && d.checklistDone <= d.checklistTotal
+            && d.createdBy is string;
+        }
+
+        allow read: if isMember(boardId);
+
+        allow create: if isMember(boardId)
+          && exactKeys(cardKeys())
+          && cardValid()
+          && request.resource.data.boardId == boardId
+          && request.resource.data.isCompleted == false
+          && request.resource.data.archivedAt == null
+          && request.resource.data.commentCount == 0
+          && request.resource.data.checklistTotal == 0
+          && request.resource.data.checklistDone == 0
+          && request.resource.data.createdBy == myUid()
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+
+        allow update: if isMember(boardId)
+          && exactKeys(cardKeys())
+          && cardValid()
+          && request.resource.data.boardId == resource.data.boardId
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.createdAt == resource.data.createdAt
+          && archiveOk()
+          && request.resource.data.updatedAt == request.time;
+
+        // Mọi thành viên xóa được card (UC05 3f). Dữ liệu con phải xóa cùng batch.
+        allow delete: if isMember(boardId);
+
+        // ---------------------------------------------------------------------
+        // boards/{boardId}/cards/{cardId}/checklist/{itemId}
+        // ---------------------------------------------------------------------
+        match /checklist/{itemId} {
+
+          allow read: if isMember(boardId);
+
+          allow create: if isMember(boardId)
+            && exactKeys(['title', 'isCompleted', 'position', 'createdAt', 'updatedAt'])
+            && isText(request.resource.data.title, 1, 200)
+            && request.resource.data.isCompleted == false
+            && request.resource.data.position is number
+            && request.resource.data.createdAt == request.time
+            && request.resource.data.updatedAt == request.time;
+
+          allow update: if isMember(boardId)
+            && onlyChanges(['title', 'isCompleted', 'position', 'updatedAt'])
+            && isText(request.resource.data.title, 1, 200)
+            && request.resource.data.isCompleted is bool
+            && request.resource.data.position is number
+            && request.resource.data.updatedAt == request.time;
+
+          allow delete: if isMember(boardId);
+        }
+
+        // ---------------------------------------------------------------------
+        // boards/{boardId}/cards/{cardId}/comments/{commentId}
+        // ---------------------------------------------------------------------
+        match /comments/{commentId} {
+
+          allow read: if isMember(boardId);
+
+          allow create: if isMember(boardId)
+            && exactKeys(['authorId', 'authorName', 'body', 'createdAt', 'updatedAt'])
+            && request.resource.data.authorId == myUid()
+            && isText(request.resource.data.authorName, 1, 100)
+            && isText(request.resource.data.body, 1, 2000)
+            && request.resource.data.createdAt == request.time
+            && request.resource.data.updatedAt == request.time;
+
+          // Chỉ tác giả được sửa, và chỉ sửa nội dung.
+          allow update: if isMember(boardId)
+            && resource.data.authorId == myUid()
+            && onlyChanges(['body', 'updatedAt'])
+            && isText(request.resource.data.body, 1, 2000)
+            && request.resource.data.updatedAt == request.time;
+
+          // Tác giả hoặc Owner xóa được. Ngoài ra, bình luận được phép xóa kèm khi
+          // card cha bị xóa trong cùng batch (existsAfter == false).
+          allow delete: if isMember(boardId)
+            && (
+                 resource.data.authorId == myUid()
+              || isOwner(boardId)
+              || !existsAfter(
+                   /databases/$(database)/documents/boards/$(boardId)/cards/$(cardId))
+               );
+        }
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // TRUY VẤN XUYÊN BOARD (collection group)
+    // Rules cho truy vấn xuyên board không thể tra tờ board cha, nên điều kiện
+    // phải kiểm tra được ngay trên chính tờ hồ sơ.
+    // -------------------------------------------------------------------------
+
+    // "Công việc của tôi" (UC07): card được giao cho mình.
+    // Truy vấn bắt buộc: collectionGroup('cards').where('assigneeIds', arrayContains: uid)
+    match /{path=**}/cards/{cardId} {
+      allow read: if signedIn() && myUid() in resource.data.assigneeIds;
+    }
+
+    // "Lời mời của tôi" (UC06): lời mời gửi tới email của mình.
+    // Truy vấn bắt buộc: collectionGroup('invitations').where('normalizedEmail', isEqualTo: <email thường>)
+    match /{path=**}/invitations/{invitationId} {
+      allow read: if signedIn() && resource.data.normalizedEmail == myEmail();
+    }
+  }
+}

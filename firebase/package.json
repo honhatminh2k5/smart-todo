@@ -8,7 +8,7 @@
   "scripts": {
     "validate-seed": "node seed/validate-seed.mjs",
     "seed": "node seed/seed.mjs",
-    "test:rules": "node --test tests/firestore.rules.test.mjs"
+    "test:rules": "node --test tests/firestore.rules.test.mjs && node --test tests/firestore.uc03.rules.test.mjs"
   },
   "dependencies": {
     "firebase-admin": "^14.5.0"

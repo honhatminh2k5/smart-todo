@@ -37,26 +37,27 @@ final listRepositoryProvider = Provider<ListRepository>((ref) {
 /// Tự động kết nối real-time với Firestore subcollection qua [ListRepository.getListsByBoardId].
 final boardListsStreamProvider =
     StreamProvider.family<List<TaskListModel>, String>((ref, boardId) {
-  final repo = ref.watch(listRepositoryProvider);
-  return repo.getListsByBoardId(boardId);
-});
+      final repo = ref.watch(listRepositoryProvider);
+      return repo.getListsByBoardId(boardId);
+    });
+
+/// Luồng các List đã lưu trữ (`archivedAt != null`) của một board.
+final archivedBoardListsStreamProvider =
+    StreamProvider.family<List<TaskListModel>, String>((ref, boardId) {
+      final repo = ref.watch(listRepositoryProvider);
+      return repo.getArchivedListsByBoardId(boardId);
+    });
 
 /// Trạng thái thao tác danh sách (loading, lỗi).
 class ListOperationState {
-  const ListOperationState({
-    this.isLoading = false,
-    this.errorMessage,
-  });
+  const ListOperationState({this.isLoading = false, this.errorMessage});
 
   final bool isLoading;
   final String? errorMessage;
 
   bool get hasError => errorMessage != null;
 
-  ListOperationState copyWith({
-    bool? isLoading,
-    String? errorMessage,
-  }) {
+  ListOperationState copyWith({bool? isLoading, String? errorMessage}) {
     return ListOperationState(
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
@@ -148,10 +149,7 @@ class BoardListsController extends Notifier<ListOperationState> {
   /// Xóa List (soft-delete theo schema § 4.6 và Firestore security rules).
   ///
   /// Không tự ý xóa Card thuộc List ở tầng này.
-  Future<bool> deleteList({
-    required String boardId,
-    required String listId,
-  }) =>
+  Future<bool> deleteList({required String boardId, required String listId}) =>
       archiveList(boardId: boardId, listId: listId);
 
   /// Khôi phục một List đã lưu trữ.
@@ -223,5 +221,5 @@ class BoardListsController extends Notifier<ListOperationState> {
 /// Provider cho [BoardListsController].
 final boardListsControllerProvider =
     NotifierProvider<BoardListsController, ListOperationState>(
-  BoardListsController.new,
-);
+      BoardListsController.new,
+    );

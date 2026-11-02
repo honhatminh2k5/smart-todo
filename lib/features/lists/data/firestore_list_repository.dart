@@ -9,7 +9,7 @@ import 'list_repository.dart';
 /// Quyền hạn được kiểm soát ở server thông qua Firestore Security Rules.
 class FirestoreListRepository implements ListRepository {
   FirestoreListRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseFirestore _firestore;
 
@@ -42,8 +42,33 @@ class FirestoreListRepository implements ListRepository {
         .where('archivedAt', isNull: true)
         .orderBy('position')
         .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map(TaskListModel.fromDocument).toList());
+        .map(
+          (snapshot) => snapshot.docs.map(TaskListModel.fromDocument).toList(),
+        );
+  }
+
+  @override
+  Stream<List<TaskListModel>> getArchivedListsByBoardId(String boardId) {
+    return _lists(boardId)
+        // `isNotEqualTo: null` is not reliable for this stream on all
+        // Firestore emulator/FlutterFire combinations. Archived documents
+        // always contain a Timestamp, so use a Timestamp range instead.
+        .where(
+          'archivedAt',
+          isGreaterThan: Timestamp.fromMillisecondsSinceEpoch(0),
+        )
+        .snapshots()
+        .map((snapshot) {
+          final archived =
+              snapshot.docs
+                  .where(
+                    (document) => document.data()['archivedAt'] is Timestamp,
+                  )
+                  .map(TaskListModel.fromDocument)
+                  .toList()
+                ..sort((a, b) => a.position.compareTo(b.position));
+          return archived;
+        });
   }
 
   /// Tương thích ngược với [getListsByBoardId].
@@ -74,10 +99,9 @@ class FirestoreListRepository implements ListRepository {
 
     double targetPosition = position ?? 0.0;
     if (position == null) {
-      final lastSnap = await _lists(boardId)
-          .orderBy('position', descending: true)
-          .limit(1)
-          .get();
+      final lastSnap = await _lists(
+        boardId,
+      ).orderBy('position', descending: true).limit(1).get();
 
       final lastPosition = lastSnap.docs.isEmpty
           ? 0.0
@@ -159,10 +183,7 @@ class FirestoreListRepository implements ListRepository {
   /// Ở giai đoạn tích hợp Card (UC05), cần quyết định phương án cascade:
   /// archive hàng loạt Card cùng lúc hoặc xử lý hiển thị phù hợp.
   @override
-  Future<void> deleteList({
-    required String boardId,
-    required String listId,
-  }) =>
+  Future<void> deleteList({required String boardId, required String listId}) =>
       archiveList(boardId: boardId, listId: listId);
 
   /// Lưu trữ List (soft-delete) bằng cách đặt `archivedAt = serverTimestamp()`.
@@ -183,7 +204,8 @@ class FirestoreListRepository implements ListRepository {
     required String boardId,
     required String listId,
   }) async {
-    await _lists(boardId).doc(listId).update({
+    final document = _lists(boardId).doc(listId);
+    await document.update({
       'archivedAt': null,
       'updatedAt': FieldValue.serverTimestamp(),
     });

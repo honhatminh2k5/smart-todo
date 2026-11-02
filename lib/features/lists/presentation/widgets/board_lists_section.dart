@@ -193,31 +193,26 @@ class _BoardListsSectionState extends ConsumerState<BoardListsSection> {
         children: [
           AbsorbPointer(
             absorbing: _isReordering,
-            child: Row(
-              children: [
-                Expanded(
-                  child: ReorderableListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    buildDefaultDragHandles: true,
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: displayedLists.length,
-                    onReorderItem: (oldIndex, newIndex) =>
-                        _reorderLists(displayedLists, oldIndex, newIndex),
-                    itemBuilder: (context, index) {
-                      final list = displayedLists[index];
-                      return Padding(
-                        key: ValueKey(list.id),
-                        padding: EdgeInsets.only(
-                          right: index == displayedLists.length - 1 ? 0 : 14,
-                        ),
-                        child: _buildListCard(context, ref, list),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 14),
-                AddListCard(boardId: boardId),
-              ],
+            child: ReorderableListView.builder(
+              scrollDirection: Axis.horizontal,
+              buildDefaultDragHandles: true,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.only(right: 4),
+              footer: Padding(
+                padding: const EdgeInsets.only(left: 14),
+                child: AddListCard(boardId: boardId),
+              ),
+              itemCount: displayedLists.length,
+              onReorderItem: (oldIndex, newIndex) =>
+                  _reorderLists(displayedLists, oldIndex, newIndex),
+              itemBuilder: (context, index) {
+                final list = displayedLists[index];
+                return Padding(
+                  key: ValueKey(list.id),
+                  padding: const EdgeInsets.only(right: 14),
+                  child: _buildListCard(context, ref, list),
+                );
+              },
             ),
           ),
           if (_isReordering)
@@ -303,6 +298,13 @@ class _BoardListsSectionState extends ConsumerState<BoardListsSection> {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -314,19 +316,10 @@ class _BoardListsSectionState extends ConsumerState<BoardListsSection> {
                 child: ListTitleEditor(boardId: boardId, list: list),
               ),
               const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '#${(list.position / 1000).toInt() > 0 ? (list.position / 1000).toInt() : 1}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+              Text(
+                '0 thẻ',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
               IconButton(
@@ -336,7 +329,7 @@ class _BoardListsSectionState extends ConsumerState<BoardListsSection> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 4),
           // Placeholder khu vực thẻ công việc (UC05)
           Expanded(
             child: Container(

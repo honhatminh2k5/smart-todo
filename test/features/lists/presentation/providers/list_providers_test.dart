@@ -13,9 +13,7 @@ void main() {
     setUp(() {
       fakeRepo = FakeListRepository();
       container = ProviderContainer(
-        overrides: [
-          listRepositoryProvider.overrideWithValue(fakeRepo),
-        ],
+        overrides: [listRepositoryProvider.overrideWithValue(fakeRepo)],
       );
     });
 
@@ -24,30 +22,55 @@ void main() {
       fakeRepo.dispose();
     });
 
-    test('boardListsStreamProvider emits active lists for given boardId',
-        () async {
-      AsyncValue<List<TaskListModel>>? state;
-      container.listen(
-        boardListsStreamProvider(boardId),
-        (_, next) => state = next,
-        fireImmediately: true,
-      );
+    test(
+      'boardListsStreamProvider emits active lists for given boardId',
+      () async {
+        AsyncValue<List<TaskListModel>>? state;
+        container.listen(
+          boardListsStreamProvider(boardId),
+          (_, next) => state = next,
+          fireImmediately: true,
+        );
 
-      // Cho Stream phát giá trị đầu tiên
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+        // Cho Stream phát giá trị đầu tiên
+        await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      expect(state, isNotNull);
-      expect(state!.hasValue, isTrue);
-      final lists = state!.value!;
-      expect(lists.length, 3);
-      expect(lists[0].name, 'Cần làm');
-      expect(lists[1].name, 'Đang làm');
-      expect(lists[2].name, 'Hoàn thành');
-    });
+        expect(state, isNotNull);
+        expect(state!.hasValue, isTrue);
+        final lists = state!.value!;
+        expect(lists.length, 3);
+        expect(lists[0].name, 'Cần làm');
+        expect(lists[1].name, 'Đang làm');
+        expect(lists[2].name, 'Hoàn thành');
+      },
+    );
+
+    test(
+      'archivedBoardListsStreamProvider emits archived lists only',
+      () async {
+        await fakeRepo.archiveList(boardId: boardId, listId: 'list_todo');
+
+        AsyncValue<List<TaskListModel>>? state;
+        container.listen(
+          archivedBoardListsStreamProvider(boardId),
+          (_, next) => state = next,
+          fireImmediately: true,
+        );
+
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+
+        expect(state, isNotNull);
+        expect(state!.hasValue, isTrue);
+        expect(state!.value!.map((list) => list.id), ['list_todo']);
+
+        final active = await fakeRepo.getListsByBoardId(boardId).first;
+        expect(active.length, 2);
+        expect(active.any((list) => list.id == 'list_todo'), isFalse);
+      },
+    );
 
     test('createList creates list and updates state', () async {
-      final controller =
-          container.read(boardListsControllerProvider.notifier);
+      final controller = container.read(boardListsControllerProvider.notifier);
 
       final success = await controller.createList(
         boardId: boardId,
@@ -63,8 +86,7 @@ void main() {
     });
 
     test('createList with invalid name sets error state', () async {
-      final controller =
-          container.read(boardListsControllerProvider.notifier);
+      final controller = container.read(boardListsControllerProvider.notifier);
 
       final success = await controller.createList(
         boardId: boardId,
@@ -82,8 +104,7 @@ void main() {
     });
 
     test('renameList updates list name', () async {
-      final controller =
-          container.read(boardListsControllerProvider.notifier);
+      final controller = container.read(boardListsControllerProvider.notifier);
 
       final success = await controller.renameList(
         boardId: boardId,
@@ -93,13 +114,14 @@ void main() {
 
       expect(success, isTrue);
       final lists = await fakeRepo.getListsByBoardId(boardId).first;
-      expect(lists.firstWhere((l) => l.id == 'list_todo').name,
-          'Việc cần làm ngay');
+      expect(
+        lists.firstWhere((l) => l.id == 'list_todo').name,
+        'Việc cần làm ngay',
+      );
     });
 
     test('archiveList and unarchiveList toggle archive state', () async {
-      final controller =
-          container.read(boardListsControllerProvider.notifier);
+      final controller = container.read(boardListsControllerProvider.notifier);
 
       // Archive
       final archiveSuccess = await controller.archiveList(
@@ -123,8 +145,7 @@ void main() {
     });
 
     test('deleteList soft-deletes list', () async {
-      final controller =
-          container.read(boardListsControllerProvider.notifier);
+      final controller = container.read(boardListsControllerProvider.notifier);
 
       final success = await controller.deleteList(
         boardId: boardId,
@@ -137,8 +158,7 @@ void main() {
     });
 
     test('reorderLists changes position order', () async {
-      final controller =
-          container.read(boardListsControllerProvider.notifier);
+      final controller = container.read(boardListsControllerProvider.notifier);
 
       final success = await controller.reorderLists(
         boardId: boardId,

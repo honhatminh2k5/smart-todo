@@ -37,7 +37,7 @@ void main() {
       );
 
       expect(find.text('Hoàn thành'), findsOneWidget);
-      expect(find.text('Chưa có thẻ công việc'), findsNWidgets(2));
+      expect(find.text('Chưa có thẻ công việc'), findsNWidgets(3));
 
       fakeRepo.dispose();
     });
@@ -79,7 +79,7 @@ void main() {
       );
 
       await tester.pump(const Duration(milliseconds: 50));
-      await tester.tap(find.text('+ Thêm danh sách'));
+      await tester.tap(find.byType(OutlinedButton));
       await tester.pump();
 
       await tester.enterText(find.byType(TextFormField), 'Việc cần làm');
@@ -88,7 +88,60 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Việc cần làm'), findsOneWidget);
-      expect(find.text('+ Thêm danh sách'), findsOneWidget);
+      expect(find.byType(OutlinedButton), findsOneWidget);
+
+      fakeRepo.dispose();
+    });
+
+    testWidgets('submits exactly once when Enter is pressed', (tester) async {
+      final fakeRepo = FakeListRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [listRepositoryProvider.overrideWithValue(fakeRepo)],
+          child: const MaterialApp(
+            home: Scaffold(body: BoardListsSection(boardId: 'empty_board')),
+          ),
+        ),
+      );
+
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(find.byType(OutlinedButton));
+      await tester.pump();
+      await tester.enterText(find.byType(TextFormField), 'Enter only');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pumpAndSettle();
+
+      final lists = await fakeRepo.getListsByBoardId('empty_board').first;
+      expect(lists.where((list) => list.name == 'Enter only'), hasLength(1));
+
+      fakeRepo.dispose();
+    });
+
+    testWidgets('submits exactly once when Add is pressed', (tester) async {
+      final fakeRepo = FakeListRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [listRepositoryProvider.overrideWithValue(fakeRepo)],
+          child: const MaterialApp(
+            home: Scaffold(body: BoardListsSection(boardId: 'empty_board')),
+          ),
+        ),
+      );
+
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(find.byType(OutlinedButton));
+      await tester.pump();
+      await tester.enterText(find.byType(TextFormField), 'Add only');
+      await tester.tap(find.byType(FilledButton));
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pumpAndSettle();
+
+      final lists = await fakeRepo.getListsByBoardId('empty_board').first;
+      expect(lists.where((list) => list.name == 'Add only'), hasLength(1));
 
       fakeRepo.dispose();
     });

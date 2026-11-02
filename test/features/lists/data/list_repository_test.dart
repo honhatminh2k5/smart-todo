@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_todo/features/boards/domain/board_models.dart';
 import 'package:smart_todo/features/lists/data/fake_list_repository.dart';
+import 'package:smart_todo/features/lists/data/list_model.dart';
 
 void main() {
   group('FakeListRepository (ListRepository implementation)', () {
@@ -15,38 +16,81 @@ void main() {
       repository.dispose();
     });
 
-    test('getListsByBoardId returns active lists ordered by position', () async {
-      final stream = repository.getListsByBoardId(boardId);
+    test(
+      'getListsByBoardId returns active lists ordered by position',
+      () async {
+        final stream = repository.getListsByBoardId(boardId);
 
-      final lists = await stream.first;
-      expect(lists.length, 3);
-      expect(lists[0].name, 'Cần làm');
-      expect(lists[0].position, 1000.0);
-      expect(lists[1].name, 'Đang làm');
-      expect(lists[1].position, 2000.0);
-      expect(lists[2].name, 'Hoàn thành');
-      expect(lists[2].position, 3000.0);
-      expect(lists.every((l) => !l.isArchived), isTrue);
+        final lists = await stream.first;
+        expect(lists.length, 3);
+        expect(lists[0].name, 'Cần làm');
+        expect(lists[0].position, 1000.0);
+        expect(lists[1].name, 'Đang làm');
+        expect(lists[1].position, 2000.0);
+        expect(lists[2].name, 'Hoàn thành');
+        expect(lists[2].position, 3000.0);
+        expect(lists.every((l) => !l.isArchived), isTrue);
+      },
+    );
+
+    test(
+      'getArchivedListsByBoardId returns only archived lists by position',
+      () async {
+        await repository.archiveList(boardId: boardId, listId: 'list_doing');
+
+        final archived = await repository
+            .getArchivedListsByBoardId(boardId)
+            .first;
+
+        expect(archived.map((list) => list.id), ['list_doing']);
+        expect(archived.every((list) => list.isArchived), isTrue);
+
+        final active = await repository.getListsByBoardId(boardId).first;
+        expect(active.map((list) => list.id), ['list_todo', 'list_done']);
+      },
+    );
+
+    test('archive and restore update the archived stream', () async {
+      final emissions = <List<TaskListModel>>[];
+      final subscription = repository
+          .getArchivedListsByBoardId(boardId)
+          .listen(emissions.add);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(emissions, hasLength(1));
+      expect(emissions.last, isEmpty);
+
+      await repository.archiveList(boardId: boardId, listId: 'list_todo');
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(emissions.last.map((list) => list.id), ['list_todo']);
+
+      await repository.unarchiveList(boardId: boardId, listId: 'list_todo');
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(emissions.last, isEmpty);
+
+      await subscription.cancel();
     });
 
-    test('createList adds a new list with calculated position and timestamps', () async {
-      final newId = await repository.createList(
-        boardId: boardId,
-        name: 'Kiểm thử',
-      );
+    test(
+      'createList adds a new list with calculated position and timestamps',
+      () async {
+        final newId = await repository.createList(
+          boardId: boardId,
+          name: 'Kiểm thử',
+        );
 
-      expect(newId, isNotEmpty);
+        expect(newId, isNotEmpty);
 
-      final lists = await repository.getListsByBoardId(boardId).first;
-      expect(lists.length, 4);
+        final lists = await repository.getListsByBoardId(boardId).first;
+        expect(lists.length, 4);
 
-      final created = lists.firstWhere((l) => l.id == newId);
-      expect(created.name, 'Kiểm thử');
-      expect(created.position, 4000.0); // max (3000) + 1000
-      expect(created.archivedAt, isNull);
-      expect(created.createdAt, isNotNull);
-      expect(created.updatedAt, isNotNull);
-    });
+        final created = lists.firstWhere((l) => l.id == newId);
+        expect(created.name, 'Kiểm thử');
+        expect(created.position, 4000.0); // max (3000) + 1000
+        expect(created.archivedAt, isNull);
+        expect(created.createdAt, isNotNull);
+        expect(created.updatedAt, isNotNull);
+      },
+    );
 
     test('updateList updates fields without overwriting createdAt', () async {
       final initialLists = await repository.getListsByBoardId(boardId).first;
@@ -78,7 +122,9 @@ void main() {
       );
 
       expect(
-        repository.getCardsForList(boardId: boardId, listId: 'list_todo').length,
+        repository
+            .getCardsForList(boardId: boardId, listId: 'list_todo')
+            .length,
         3,
       );
 
@@ -90,7 +136,10 @@ void main() {
       expect(activeLists.any((l) => l.id == 'list_todo'), isFalse);
 
       // Card vẫn còn nguyên vẹn trong list_todo
-      final cards = repository.getCardsForList(boardId: boardId, listId: 'list_todo');
+      final cards = repository.getCardsForList(
+        boardId: boardId,
+        listId: 'list_todo',
+      );
       expect(cards.length, 3);
       expect(cards.any((c) => c.title == 'Card thử nghiệm'), isTrue);
     });

@@ -26,6 +26,7 @@ class _AddListCardState extends ConsumerState<AddListCard> {
   }
 
   Future<void> _submit() async {
+    if (_isSubmitting) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() => _isSubmitting = true);
@@ -123,6 +124,13 @@ class _AddListCardState extends ConsumerState<AddListCard> {
                     return null;
                   },
                   onFieldSubmitted: (_) => _submit(),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Tối đa 100 ký tự',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const Spacer(),
                 Row(

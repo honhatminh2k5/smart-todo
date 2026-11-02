@@ -12,10 +12,8 @@ import 'list_repository.dart';
 /// Bản ghi nội bộ của FakeListRepository — lưu List kèm danh sách card
 /// tạm thời để demo UI / test mà không cần Firebase.
 class _ListRecord {
-  _ListRecord({
-    required this.model,
-    List<BoardCard>? cards,
-  }) : cards = cards ?? [];
+  _ListRecord({required this.model, List<BoardCard>? cards})
+    : cards = cards ?? [];
 
   TaskListModel model;
   List<BoardCard> cards;
@@ -40,6 +38,8 @@ class FakeListRepository implements ListRepository {
 
   // Một StreamController broadcast cho mỗi boardId đang được theo dõi
   final Map<String, StreamController<List<TaskListModel>>> _controllers = {};
+  final Map<String, StreamController<List<TaskListModel>>>
+  _archivedControllers = {};
 
   // ---------------------------------------------------------------------------
   // Seed data
@@ -71,9 +71,7 @@ class FakeListRepository implements ListRepository {
           createdAt: DateTime(2026, 10, 1),
           updatedAt: DateTime(2026, 10, 5),
         ),
-        cards: [
-          const BoardCard(title: 'Thiết kế ERD'),
-        ],
+        cards: [const BoardCard(title: 'Thiết kế ERD')],
       ),
       _ListRecord(
         model: TaskListModel(
@@ -84,9 +82,7 @@ class FakeListRepository implements ListRepository {
           createdAt: DateTime(2026, 10, 1),
           updatedAt: DateTime(2026, 10, 10),
         ),
-        cards: [
-          const BoardCard(title: 'Đặt tên đề tài'),
-        ],
+        cards: [const BoardCard(title: 'Đặt tên đề tài')],
       ),
     ];
   }
@@ -107,20 +103,34 @@ class FakeListRepository implements ListRepository {
       _store.putIfAbsent(boardId, () => []);
 
   List<TaskListModel> _getActiveLists(String boardId) {
-    final active = _recordsFor(boardId)
-        .where((r) => !r.model.isArchived)
-        .map((r) => r.model)
-        .toList()
-      ..sort((a, b) => a.position.compareTo(b.position));
+    final active =
+        _recordsFor(
+            boardId,
+          ).where((r) => !r.model.isArchived).map((r) => r.model).toList()
+          ..sort((a, b) => a.position.compareTo(b.position));
     return active;
+  }
+
+  List<TaskListModel> _getArchivedLists(String boardId) {
+    final archived =
+        _recordsFor(
+            boardId,
+          ).where((r) => r.model.isArchived).map((r) => r.model).toList()
+          ..sort((a, b) => a.position.compareTo(b.position));
+    return archived;
   }
 
   /// Phát danh sách active (archivedAt == null), sắp xếp tăng dần theo position,
   /// đến StreamController của boardId tương ứng.
   void _emit(String boardId) {
     final controller = _controllers[boardId];
-    if (controller == null || controller.isClosed) return;
-    controller.add(_getActiveLists(boardId));
+    if (controller != null && !controller.isClosed) {
+      controller.add(_getActiveLists(boardId));
+    }
+    final archivedController = _archivedControllers[boardId];
+    if (archivedController != null && !archivedController.isClosed) {
+      archivedController.add(_getArchivedLists(boardId));
+    }
   }
 
   _ListRecord _findRecord(String boardId, String listId) {
@@ -128,7 +138,8 @@ class FakeListRepository implements ListRepository {
     final idx = records.indexWhere((r) => r.model.id == listId);
     if (idx == -1) {
       throw StateError(
-          'Không tìm thấy danh sách "$listId" trong board "$boardId".');
+        'Không tìm thấy danh sách "$listId" trong board "$boardId".',
+      );
     }
     return records[idx];
   }
@@ -139,11 +150,21 @@ class FakeListRepository implements ListRepository {
 
   @override
   Stream<List<TaskListModel>> getListsByBoardId(String boardId) async* {
-    yield _getActiveLists(boardId);
     final controller = _controllers.putIfAbsent(
       boardId,
       () => StreamController<List<TaskListModel>>.broadcast(),
     );
+    yield _getActiveLists(boardId);
+    yield* controller.stream;
+  }
+
+  @override
+  Stream<List<TaskListModel>> getArchivedListsByBoardId(String boardId) async* {
+    final controller = _archivedControllers.putIfAbsent(
+      boardId,
+      () => StreamController<List<TaskListModel>>.broadcast(),
+    );
+    yield _getArchivedLists(boardId);
     yield* controller.stream;
   }
 
@@ -169,12 +190,13 @@ class FakeListRepository implements ListRepository {
       final maxPosition = records.isEmpty
           ? 0.0
           : records
-              .map((r) => r.model.position)
-              .reduce((a, b) => a > b ? a : b);
+                .map((r) => r.model.position)
+                .reduce((a, b) => a > b ? a : b);
       targetPosition = maxPosition + 1000.0;
     }
 
-    final id = 'list_${DateTime.now().millisecondsSinceEpoch}_${records.length}';
+    final id =
+        'list_${DateTime.now().millisecondsSinceEpoch}_${records.length}';
     final now = DateTime.now();
 
     final newModel = TaskListModel(
@@ -243,10 +265,7 @@ class FakeListRepository implements ListRepository {
   ///
   /// KHÔNG xóa các card thuộc list. Đánh dấu `archivedAt = DateTime.now()`.
   @override
-  Future<void> deleteList({
-    required String boardId,
-    required String listId,
-  }) =>
+  Future<void> deleteList({required String boardId, required String listId}) =>
       archiveList(boardId: boardId, listId: listId);
 
   @override
@@ -347,6 +366,10 @@ class FakeListRepository implements ListRepository {
     for (final c in _controllers.values) {
       c.close();
     }
+    for (final c in _archivedControllers.values) {
+      c.close();
+    }
     _controllers.clear();
+    _archivedControllers.clear();
   }
 }

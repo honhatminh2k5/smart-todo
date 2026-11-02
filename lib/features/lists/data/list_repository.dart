@@ -13,6 +13,10 @@ abstract interface class ListRepository {
   /// được sắp xếp tăng dần theo [TaskListModel.position].
   Stream<List<TaskListModel>> getListsByBoardId(String boardId);
 
+  /// Lấy Stream các List đã lưu trữ (`archivedAt != null`) của một board,
+  /// được sắp xếp tăng dần theo [TaskListModel.position].
+  Stream<List<TaskListModel>> getArchivedListsByBoardId(String boardId);
+
   /// Tương thích ngược với [getListsByBoardId].
   Stream<List<TaskListModel>> watchLists(String boardId);
 
@@ -57,24 +61,15 @@ abstract interface class ListRepository {
   /// ⚠️ **Quan trọng**: Phương thức này chỉ thao tác trên document của List,
   /// **KHÔNG** tự ý xóa hoặc thay đổi các Card thuộc List trong giai đoạn này.
   /// Việc xử lý các Card liên quan sẽ được quyết định ở giai đoạn tích hợp Card (UC05).
-  Future<void> deleteList({
-    required String boardId,
-    required String listId,
-  });
+  Future<void> deleteList({required String boardId, required String listId});
 
   /// Lưu trữ một List (soft-delete, tương đương [deleteList]).
-  Future<void> archiveList({
-    required String boardId,
-    required String listId,
-  });
+  Future<void> archiveList({required String boardId, required String listId});
 
   /// Khôi phục một List đã lưu trữ.
   ///
   /// Đặt lại `archivedAt = null` và cập nhật `updatedAt`.
-  Future<void> unarchiveList({
-    required String boardId,
-    required String listId,
-  });
+  Future<void> unarchiveList({required String boardId, required String listId});
 
   /// Sắp xếp lại thứ tự các List theo danh sách ID [orderedListIds].
   ///

@@ -2,8 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-/// A lightweight detail screen so UC03 can navigate to the selected board.
-/// UC04 (Lists) and UC05 (Cards) can later replace the placeholder section below.
+import '../../lists/presentation/widgets/board_lists_section.dart';
+import '../../lists/presentation/widgets/archived_lists_sheet.dart';
+
 class BoardDetailScreen extends StatelessWidget {
   const BoardDetailScreen({required this.boardId, super.key});
 
@@ -16,71 +17,104 @@ class BoardDetailScreen extends StatelessWidget {
         .doc(boardId)
         .snapshots();
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Chi tiết board')),
-      body: SafeArea(
-        child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: boardStream,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Text(
-                    'Không tải được board. Hãy kiểm tra quyền truy cập và kết nối Firestore.',
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              );
-            }
-            if (!snapshot.hasData || !snapshot.data!.exists) {
-              return const Center(
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: boardStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            appBar: AppBar(title: Text('Board')),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Board')),
+            body: const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
                 child: Text(
-                  'Board không tồn tại hoặc bạn không còn quyền truy cập.',
+                  'Không tải được board. Hãy kiểm tra quyền truy cập và kết nối Firestore.',
+                  textAlign: TextAlign.center,
                 ),
-              );
-            }
+              ),
+            ),
+          );
+        }
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Board')),
+            body: const Center(
+              child: Text(
+                'Board không tồn tại hoặc bạn không còn quyền truy cập.',
+              ),
+            ),
+          );
+        }
 
-            final data = snapshot.data!.data()!;
-            final currentUid = FirebaseAuth.instance.currentUser?.uid;
-            final ownerId = data['ownerId'] as String? ?? '';
-            final isOwner = currentUid != null && currentUid == ownerId;
-            final name = data['name'] as String? ?? '(Chưa có tên)';
-            final description = data['description'] as String? ?? '';
-            final memberIds = (data['memberIds'] as List<dynamic>? ?? const [])
-                .whereType<String>()
-                .toList(growable: false);
-            final archivedAt = data['archivedAt'];
+        final data = snapshot.data!.data()!;
+        final currentUid = FirebaseAuth.instance.currentUser?.uid;
+        final ownerId = data['ownerId'] as String? ?? '';
+        final isOwner = currentUid != null && currentUid == ownerId;
+        final name = data['name'] as String? ?? '(Chưa có tên)';
+        final description = data['description'] as String? ?? '';
+        final memberIds = (data['memberIds'] as List<dynamic>? ?? const [])
+            .whereType<String>()
+            .toList(growable: false);
+        final archivedAt = data['archivedAt'];
+        final theme = Theme.of(context);
 
-            return ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 28,
-                      child: Icon(Icons.dashboard_outlined, size: 28),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Text(
-                        name,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                    ),
-                  ],
-                ),
-                if (description.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    description,
-                    style: Theme.of(context).textTheme.bodyLarge,
+        return Scaffold(
+          appBar: AppBar(
+            leading: const BackButton(),
+            titleSpacing: 0,
+            title: Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            actions: [
+              IconButton(
+                tooltip: 'Tìm kiếm',
+                onPressed: () {},
+                icon: const Icon(Icons.search_rounded),
+              ),
+              IconButton(
+                tooltip: 'Cộng tác viên',
+                onPressed: () {},
+                icon: const Icon(Icons.group_add_outlined),
+              ),
+              PopupMenuButton<String>(
+                tooltip: 'Tùy chọn board',
+                onSelected: (value) {
+                  if (value == 'archived_lists') {
+                    ArchivedListsSheet.show(context, boardId: boardId);
+                  }
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem<String>(
+                    value: 'archived_lists',
+                    child: Text('Danh sách đã lưu trữ'),
                   ),
                 ],
-                const SizedBox(height: 16),
+              ),
+            ],
+          ),
+          body: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              children: [
+                if (description.isNotEmpty) ...[
+                  Text(
+                    description,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -105,36 +139,13 @@ class BoardDetailScreen extends StatelessWidget {
                       ),
                   ],
                 ),
-                const SizedBox(height: 28),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Khu vực công việc',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Điều hướng từ UC03 đã hoạt động. Phần danh sách (List) và thẻ công việc (Card) '
-                          'sẽ được kết nối với các chức năng UC04 và UC05 của dự án.',
-                        ),
-                        const SizedBox(height: 12),
-                        SelectableText(
-                          'Board ID: $boardId',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 24),
+                BoardListsSection(boardId: boardId),
               ],
-            );
-          },
-        ),
-      ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -2,8 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-/// A lightweight detail screen so UC03 can navigate to the selected board.
-/// UC04 (Lists) and UC05 (Cards) can later replace the placeholder section below.
+import '../../lists/presentation/widgets/board_lists_section.dart';
+
+/// Màn hình chi tiết board kết nối UC03 (Boards) với UC04 (Lists).
 class BoardDetailScreen extends StatelessWidget {
   const BoardDetailScreen({required this.boardId, super.key});
 
@@ -105,31 +106,9 @@ class BoardDetailScreen extends StatelessWidget {
                       ),
                   ],
                 ),
-                const SizedBox(height: 28),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Khu vực công việc',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Điều hướng từ UC03 đã hoạt động. Phần danh sách (List) và thẻ công việc (Card) '
-                          'sẽ được kết nối với các chức năng UC04 và UC05 của dự án.',
-                        ),
-                        const SizedBox(height: 12),
-                        SelectableText(
-                          'Board ID: $boardId',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 24),
+                // Khu vực hiển thị danh sách công việc (UC04)
+                BoardListsSection(boardId: boardId),
               ],
             );
           },

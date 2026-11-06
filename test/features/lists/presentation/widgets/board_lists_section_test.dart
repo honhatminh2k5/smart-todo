@@ -30,14 +30,16 @@ void main() {
       expect(find.text('Cần làm'), findsOneWidget);
       expect(find.text('Đang làm'), findsOneWidget);
 
+      // Mỗi cột có vùng cuộn thẻ riêng; vùng cuộn đầu tiên là board (ngang).
       await tester.scrollUntilVisible(
         find.text('Hoàn thành'),
         400,
-        scrollable: find.byType(Scrollable),
+        scrollable: find.byType(Scrollable).first,
       );
 
       expect(find.text('Hoàn thành'), findsOneWidget);
-      expect(find.text('Chưa có thẻ công việc'), findsNWidgets(3));
+      expect(find.text('Đặt tên đề tài'), findsOneWidget);
+      expect(find.text('1 thẻ'), findsWidgets);
 
       fakeRepo.dispose();
     });
@@ -232,8 +234,9 @@ void main() {
       );
 
       await tester.pump(const Duration(milliseconds: 50));
+      // Nhấn giữ tiêu đề cột để kéo list (thân cột dành cho kéo thẻ).
       final gesture = await tester.startGesture(
-        tester.getCenter(find.byKey(const ValueKey('list_todo'))),
+        tester.getCenter(find.text('Cần làm')),
       );
       await tester.pump(const Duration(milliseconds: 600));
       for (var step = 0; step < 5; step++) {

@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_todo/features/cards/data/card_model.dart';
+import 'package:smart_todo/features/cards/presentation/providers/card_providers.dart';
+import 'package:smart_todo/features/cards/presentation/widgets/card_drag_controller.dart';
+import 'package:smart_todo/features/cards/presentation/widgets/list_cards_panel.dart';
+import 'package:smart_todo/features/cards/presentation/widgets/offline_banner.dart';
 import 'package:smart_todo/features/lists/data/list_model.dart';
 import 'package:smart_todo/features/lists/presentation/providers/list_providers.dart';
 
@@ -8,7 +13,9 @@ import 'list_title_editor.dart';
 
 /// Widget hiển thị phần danh sách (Kanban columns) của một Board.
 ///
-/// Lắng nghe luồng dữ liệu thời gian thực từ [boardListsStreamProvider].
+/// Lắng nghe luồng dữ liệu thời gian thực từ [boardListsStreamProvider] và
+/// [boardCardsProvider]. Nhấn giữ tiêu đề cột để đổi thứ tự list; nhấn giữ
+/// một thẻ để kéo sang vị trí hoặc list khác.
 class BoardListsSection extends ConsumerStatefulWidget {
   const BoardListsSection({required this.boardId, super.key});
 
@@ -21,18 +28,36 @@ class BoardListsSection extends ConsumerStatefulWidget {
 class _BoardListsSectionState extends ConsumerState<BoardListsSection> {
   List<TaskListModel> _reorderingLists = const [];
   bool _isReordering = false;
+  final _cardDrag = CardDragController();
+  final _boardScroll = ScrollController();
+  final _boardViewportKey = GlobalKey();
 
   String get boardId => widget.boardId;
 
   @override
+  void initState() {
+    super.initState();
+    _cardDrag.attachBoard(_boardScroll, _boardViewportKey);
+  }
+
+  @override
+  void dispose() {
+    _cardDrag.dispose();
+    _boardScroll.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final listsAsync = ref.watch(boardListsStreamProvider(boardId));
+    final cardsAsync = ref.watch(boardCardsProvider(boardId));
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        OfflineBanner(isOffline: cardsAsync.asData?.value.isFromCache ?? false),
         Row(
           children: [
             Icon(
@@ -64,7 +89,7 @@ class _BoardListsSectionState extends ConsumerState<BoardListsSection> {
                 ],
               );
             }
-            return _buildListsView(context, ref, lists);
+            return _buildListsView(context, ref, lists, cardsAsync);
           },
         ),
       ],
@@ -184,18 +209,26 @@ class _BoardListsSectionState extends ConsumerState<BoardListsSection> {
     BuildContext context,
     WidgetRef ref,
     List<TaskListModel> lists,
+    AsyncValue<BoardCardsSnapshot> cardsAsync,
   ) {
     final displayedLists = _isReordering ? _reorderingLists : lists;
+    final columnHeight = (MediaQuery.sizeOf(context).height * 0.62).clamp(
+      380.0,
+      640.0,
+    );
 
     return SizedBox(
-      height: 320,
+      key: _boardViewportKey,
+      height: columnHeight,
       child: Stack(
         children: [
           AbsorbPointer(
             absorbing: _isReordering,
             child: ReorderableListView.builder(
+              scrollController: _boardScroll,
               scrollDirection: Axis.horizontal,
-              buildDefaultDragHandles: true,
+              // Chỉ tiêu đề cột kéo được list; phần thân dành cho kéo thẻ.
+              buildDefaultDragHandles: false,
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.only(right: 4),
               footer: Padding(
@@ -210,7 +243,7 @@ class _BoardListsSectionState extends ConsumerState<BoardListsSection> {
                 return Padding(
                   key: ValueKey(list.id),
                   padding: const EdgeInsets.only(right: 14),
-                  child: _buildListCard(context, ref, list),
+                  child: _buildListCard(context, ref, list, index, cardsAsync),
                 );
               },
             ),
@@ -288,13 +321,16 @@ class _BoardListsSectionState extends ConsumerState<BoardListsSection> {
     BuildContext context,
     WidgetRef ref,
     TaskListModel list,
+    int index,
+    AsyncValue<BoardCardsSnapshot> cardsAsync,
   ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final cards = cardsAsync.asData?.value.cardsInList(list.id) ?? const [];
 
     return Container(
       width: 260,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
@@ -306,18 +342,25 @@ class _BoardListsSectionState extends ConsumerState<BoardListsSection> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
+      child: ListCardsPanel(
+        boardId: boardId,
+        listId: list.id,
+        cards: cards,
+        dragController: _cardDrag,
+        isLoading: cardsAsync.isLoading,
+        error: cardsAsync.error,
+        // Header: nhấn giữ để kéo đổi thứ tự list.
+        header: ReorderableDelayedDragStartListener(
+          index: index,
+          enabled: !_isReordering,
+          child: Row(
             children: [
               Expanded(
                 child: ListTitleEditor(boardId: boardId, list: list),
               ),
               const SizedBox(width: 8),
               Text(
-                '0 thẻ',
+                '${cards.length} thẻ',
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -329,49 +372,7 @@ class _BoardListsSectionState extends ConsumerState<BoardListsSection> {
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          // Placeholder khu vực thẻ công việc (UC05)
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: colorScheme.outlineVariant),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.dashboard_customize_outlined,
-                      size: 28,
-                      color: colorScheme.outline,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Chưa có thẻ công việc',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Sẽ sẵn sàng ở UC05',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: colorScheme.outline,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -392,7 +393,7 @@ class _BoardListsSectionState extends ConsumerState<BoardListsSection> {
             return AlertDialog(
               title: const Text('Lưu trữ danh sách?'),
               content: Text(
-                'Danh sách “${list.name}” sẽ được lưu trữ và ẩn khỏi board hiện tại.',
+                'Danh sách “${list.name}” và các thẻ trong đó sẽ được lưu trữ và ẩn khỏi board hiện tại.',
               ),
               actions: [
                 TextButton(

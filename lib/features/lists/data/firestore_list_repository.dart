@@ -21,6 +21,10 @@ class FirestoreListRepository implements ListRepository {
   CollectionReference<Map<String, dynamic>> _lists(String boardId) =>
       _firestore.collection('boards').doc(boardId).collection('lists');
 
+  /// Subcollection `cards` của board: `boards/{boardId}/cards`.
+  CollectionReference<Map<String, dynamic>> _cards(String boardId) =>
+      _firestore.collection('boards').doc(boardId).collection('cards');
+
   /// Kiểm tra và làm sạch tên danh sách: 1–100 ký tự (UC04 § 4.6).
   String _validateName(String name) {
     final clean = name.trim();
@@ -174,41 +178,78 @@ class FirestoreListRepository implements ListRepository {
   /// Xóa List (soft-delete).
   ///
   /// Theo Firestore Rules (`allow delete: if false`) và Schema § 4.6
-  /// ("List không bị xóa, chỉ lưu trữ"), thao tác xóa ở đây đánh dấu
-  /// `archivedAt = serverTimestamp()` thay vì xóa cứng document khỏi Firestore.
-  ///
-  /// ⚠️ **Vấn đề Card liên quan**:
-  /// Phương thức này KHÔNG xóa hoặc thay đổi bất kỳ Card nào thuộc List này.
-  /// Do đó, các Card thuộc list vẫn tồn tại trên Firestore với `listId` cũ.
-  /// Ở giai đoạn tích hợp Card (UC05), cần quyết định phương án cascade:
-  /// archive hàng loạt Card cùng lúc hoặc xử lý hiển thị phù hợp.
+  /// ("List không bị xóa, chỉ lưu trữ"), thao tác xóa ở đây chính là
+  /// [archiveList]: list và các card của nó được lưu trữ, không bị xóa cứng.
   @override
   Future<void> deleteList({required String boardId, required String listId}) =>
       archiveList(boardId: boardId, listId: listId);
 
-  /// Lưu trữ List (soft-delete) bằng cách đặt `archivedAt = serverTimestamp()`.
+  /// Lưu trữ List cùng mọi card chưa lưu trữ của nó trong **một batch**
+  /// (W8, quyết định D7).
+  ///
+  /// Mọi `serverTimestamp()` trong cùng batch nhận cùng một giá trị, nên các
+  /// card mang đúng `archivedAt` của list; [unarchiveList] dựa vào đó để chỉ
+  /// khôi phục những card bị lưu trữ theo list.
   @override
   Future<void> archiveList({
     required String boardId,
     required String listId,
   }) async {
-    await _lists(boardId).doc(listId).update({
+    final cards = await _cards(boardId)
+        .where('listId', isEqualTo: listId)
+        .where('archivedAt', isNull: true)
+        .get();
+    _checkBatchSize(cards.docs.length + 1);
+
+    final archived = {
       'archivedAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
-    });
+    };
+    final batch = _firestore.batch();
+    batch.update(_lists(boardId).doc(listId), archived);
+    for (final card in cards.docs) {
+      batch.update(card.reference, archived);
+    }
+    await batch.commit();
   }
 
-  /// Khôi phục List đã lưu trữ bằng cách đặt `archivedAt = null`.
+  /// Khôi phục List đã lưu trữ cùng các card đã bị lưu trữ theo nó (card có
+  /// `archivedAt` trùng với list). Card được lưu trữ riêng lẻ vẫn bị ẩn.
   @override
   Future<void> unarchiveList({
     required String boardId,
     required String listId,
   }) async {
     final document = _lists(boardId).doc(listId);
-    await document.update({
+    final archivedAt = (await document.get()).data()?['archivedAt'];
+    final cards = archivedAt is Timestamp
+        ? (await _cards(boardId)
+                  .where('listId', isEqualTo: listId)
+                  .where('archivedAt', isEqualTo: archivedAt)
+                  .get())
+              .docs
+        : const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+    _checkBatchSize(cards.length + 1);
+
+    final restored = {
       'archivedAt': null,
       'updatedAt': FieldValue.serverTimestamp(),
-    });
+    };
+    final batch = _firestore.batch();
+    batch.update(document, restored);
+    for (final card in cards) {
+      batch.update(card.reference, restored);
+    }
+    await batch.commit();
+  }
+
+  /// Một batch Firestore chứa tối đa 500 thao tác ghi.
+  void _checkBatchSize(int writes) {
+    if (writes > 500) {
+      throw StateError(
+        'Danh sách có quá nhiều thẻ để lưu trữ hoặc khôi phục trong một lần.',
+      );
+    }
   }
 
   // ---------------------------------------------------------------------------

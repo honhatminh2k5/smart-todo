@@ -19,9 +19,9 @@ void main() {
       ),
     );
 
-    expect(find.text('Chào mừng trở lại'), findsOneWidget);
+    expect(find.text('Smart Todo'), findsOneWidget);
     expect(find.text('Đăng nhập'), findsOneWidget);
     expect(find.text('Quên mật khẩu?'), findsOneWidget);
-    expect(find.text('Đăng ký ngay'), findsOneWidget);
+    expect(find.text('Đăng ký tài khoản'), findsOneWidget);
   });
 }

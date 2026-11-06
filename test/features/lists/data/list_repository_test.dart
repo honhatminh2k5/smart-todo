@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smart_todo/features/boards/domain/board_models.dart';
 import 'package:smart_todo/features/lists/data/fake_list_repository.dart';
 import 'package:smart_todo/features/lists/data/list_model.dart';
 
@@ -113,35 +112,16 @@ void main() {
       expect(updated.updatedAt!.isAfter(originalCreatedAt!), isTrue);
     });
 
-    test('deleteList soft-deletes list and does NOT delete cards', () async {
-      // Thêm card demo vào list_todo
-      repository.addCardToList(
-        boardId: boardId,
-        listId: 'list_todo',
-        card: const BoardCard(title: 'Card thử nghiệm'),
-      );
-
-      expect(
-        repository
-            .getCardsForList(boardId: boardId, listId: 'list_todo')
-            .length,
-        3,
-      );
-
-      // Xóa list_todo
+    test('deleteList soft-deletes the list instead of removing it', () async {
       await repository.deleteList(boardId: boardId, listId: 'list_todo');
 
-      // Danh sách active không còn list_todo
       final activeLists = await repository.getListsByBoardId(boardId).first;
       expect(activeLists.any((l) => l.id == 'list_todo'), isFalse);
 
-      // Card vẫn còn nguyên vẹn trong list_todo
-      final cards = repository.getCardsForList(
-        boardId: boardId,
-        listId: 'list_todo',
-      );
-      expect(cards.length, 3);
-      expect(cards.any((c) => c.title == 'Card thử nghiệm'), isTrue);
+      final archived = await repository
+          .getArchivedListsByBoardId(boardId)
+          .first;
+      expect(archived.map((l) => l.id), ['list_todo']);
     });
 
     test('reorderLists updates positions in given order', () async {

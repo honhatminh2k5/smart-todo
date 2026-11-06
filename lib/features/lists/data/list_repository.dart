@@ -56,19 +56,19 @@ abstract interface class ListRepository {
   /// Xóa một List khỏi board.
   ///
   /// Theo Firestore Rules (`allow delete: if false`) và Schema § 4.6,
-  /// List không bị xóa vật lý mà thực hiện soft-delete (đặt `archivedAt`).
-  ///
-  /// ⚠️ **Quan trọng**: Phương thức này chỉ thao tác trên document của List,
-  /// **KHÔNG** tự ý xóa hoặc thay đổi các Card thuộc List trong giai đoạn này.
-  /// Việc xử lý các Card liên quan sẽ được quyết định ở giai đoạn tích hợp Card (UC05).
+  /// List không bị xóa vật lý mà được lưu trữ như [archiveList].
   Future<void> deleteList({required String boardId, required String listId});
 
   /// Lưu trữ một List (soft-delete, tương đương [deleteList]).
+  ///
+  /// Theo quyết định D7, các Card chưa lưu trữ của List được lưu trữ cùng lúc
+  /// với cùng `archivedAt`, không bị xóa.
   Future<void> archiveList({required String boardId, required String listId});
 
   /// Khôi phục một List đã lưu trữ.
   ///
-  /// Đặt lại `archivedAt = null` và cập nhật `updatedAt`.
+  /// Đặt lại `archivedAt = null`, cập nhật `updatedAt`, và khôi phục các Card
+  /// đã bị lưu trữ cùng List.
   Future<void> unarchiveList({required String boardId, required String listId});
 
   /// Sắp xếp lại thứ tự các List theo danh sách ID [orderedListIds].

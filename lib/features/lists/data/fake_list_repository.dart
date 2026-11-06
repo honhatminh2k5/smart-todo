@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:smart_todo/features/boards/domain/board_models.dart';
-
 import 'list_model.dart';
 import 'list_repository.dart';
 
@@ -9,14 +7,14 @@ import 'list_repository.dart';
 // Internal in-memory record (không expose ra ngoài)
 // ---------------------------------------------------------------------------
 
-/// Bản ghi nội bộ của FakeListRepository — lưu List kèm danh sách card
-/// tạm thời để demo UI / test mà không cần Firebase.
+/// Bản ghi nội bộ của FakeListRepository.
+///
+/// Card nằm riêng trong `FakeCardRepository`; board chỉ hiện card thuộc list
+/// đang hoạt động nên card của list đã lưu trữ cũng bị ẩn theo.
 class _ListRecord {
-  _ListRecord({required this.model, List<BoardCard>? cards})
-    : cards = cards ?? [];
+  _ListRecord({required this.model});
 
   TaskListModel model;
-  List<BoardCard> cards;
 }
 
 // ---------------------------------------------------------------------------
@@ -57,10 +55,6 @@ class FakeListRepository implements ListRepository {
           createdAt: DateTime(2026, 10, 1),
           updatedAt: DateTime(2026, 10, 1),
         ),
-        cards: [
-          const BoardCard(title: 'Đọc tài liệu tham khảo'),
-          const BoardCard(title: 'Phác thảo chương 1'),
-        ],
       ),
       _ListRecord(
         model: TaskListModel(
@@ -71,7 +65,6 @@ class FakeListRepository implements ListRepository {
           createdAt: DateTime(2026, 10, 1),
           updatedAt: DateTime(2026, 10, 5),
         ),
-        cards: [const BoardCard(title: 'Thiết kế ERD')],
       ),
       _ListRecord(
         model: TaskListModel(
@@ -82,7 +75,6 @@ class FakeListRepository implements ListRepository {
           createdAt: DateTime(2026, 10, 1),
           updatedAt: DateTime(2026, 10, 10),
         ),
-        cards: [const BoardCard(title: 'Đặt tên đề tài')],
       ),
     ];
   }
@@ -261,9 +253,7 @@ class FakeListRepository implements ListRepository {
   // Write — Delete / Archive / Restore
   // ---------------------------------------------------------------------------
 
-  /// Xóa List (soft-delete theo schema § 4.6).
-  ///
-  /// KHÔNG xóa các card thuộc list. Đánh dấu `archivedAt = DateTime.now()`.
+  /// Xóa List (soft-delete theo schema § 4.6): đánh dấu `archivedAt`.
   @override
   Future<void> deleteList({required String boardId, required String listId}) =>
       archiveList(boardId: boardId, listId: listId);
@@ -332,30 +322,6 @@ class FakeListRepository implements ListRepository {
       );
     }
     _emit(boardId);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Testing & Demo Helpers (không nằm trong ListRepository interface)
-  // ---------------------------------------------------------------------------
-
-  void addCardToList({
-    required String boardId,
-    required String listId,
-    required BoardCard card,
-  }) {
-    final record = _findRecord(boardId, listId);
-    record.cards.add(card);
-  }
-
-  List<BoardCard> getCardsForList({
-    required String boardId,
-    required String listId,
-  }) {
-    try {
-      return List.unmodifiable(_findRecord(boardId, listId).cards);
-    } catch (_) {
-      return const [];
-    }
   }
 
   // ---------------------------------------------------------------------------

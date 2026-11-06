@@ -400,7 +400,13 @@ class _BoardsScreenState extends State<BoardsScreen> {
           children: [
             Icon(Icons.check_circle, color: Color(0xFF3157D5)),
             SizedBox(width: 8),
-            Text('Smart Todo · Board'),
+            Flexible(
+              child: Text(
+                'Smart Todo · Board',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         actions: [

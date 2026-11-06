@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:smart_todo/features/boards/domain/board_models.dart';
 import 'package:smart_todo/features/lists/data/fake_list_repository.dart';
 import 'package:smart_todo/features/lists/data/firestore_list_repository.dart';
 import 'package:smart_todo/features/lists/data/list_model.dart';
@@ -148,7 +147,7 @@ class BoardListsController extends Notifier<ListOperationState> {
 
   /// Xóa List (soft-delete theo schema § 4.6 và Firestore security rules).
   ///
-  /// Không tự ý xóa Card thuộc List ở tầng này.
+  /// Card thuộc List được lưu trữ theo, không bị xóa.
   Future<bool> deleteList({required String boardId, required String listId}) =>
       archiveList(boardId: boardId, listId: listId);
 
@@ -188,22 +187,6 @@ class BoardListsController extends Notifier<ListOperationState> {
         errorMessage: _formatError(e),
       );
       return false;
-    }
-  }
-
-  /// Thêm thẻ tạm thời trong chế độ preview (phục vụ prototype/dev UI).
-  Future<void> addPrototypeCard({
-    required String boardId,
-    required String listId,
-    required String title,
-  }) async {
-    if (_repository is FakeListRepository) {
-      final repo = _repository as FakeListRepository;
-      repo.addCardToList(
-        boardId: boardId,
-        listId: listId,
-        card: BoardCard(title: title),
-      );
     }
   }
 

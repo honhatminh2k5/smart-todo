@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../lists/presentation/widgets/board_lists_section.dart';
 import '../../lists/presentation/widgets/archived_lists_sheet.dart';
+import '../../search/presentation/screens/board_search_screen.dart';
 
 class BoardDetailScreen extends StatelessWidget {
   const BoardDetailScreen({required this.boardId, super.key});
@@ -78,7 +79,14 @@ class BoardDetailScreen extends StatelessWidget {
             actions: [
               IconButton(
                 tooltip: 'Tìm kiếm',
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          BoardSearchScreen(boardId: boardId, boardTitle: name),
+                    ),
+                  );
+                },
                 icon: const Icon(Icons.search_rounded),
               ),
               IconButton(

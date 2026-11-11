@@ -77,6 +77,30 @@ class FakeListRepository implements ListRepository {
         ),
       ),
     ];
+
+    // Seed riêng cho UC08 Tìm kiếm & Lọc (Figma: 2 list cuộn ngang)
+    _store['uc08_board'] = [
+      _ListRecord(
+        model: TaskListModel(
+          id: 'list_uc08_todo',
+          name: 'Cần làm',
+          position: 1000.0,
+          archivedAt: null,
+          createdAt: DateTime(2026, 10, 1),
+          updatedAt: DateTime(2026, 10, 1),
+        ),
+      ),
+      _ListRecord(
+        model: TaskListModel(
+          id: 'list_uc08_doing',
+          name: 'Đang làm',
+          position: 2000.0,
+          archivedAt: null,
+          createdAt: DateTime(2026, 10, 1),
+          updatedAt: DateTime(2026, 10, 5),
+        ),
+      ),
+    ];
   }
 
   // ---------------------------------------------------------------------------

@@ -8,6 +8,7 @@
   "scripts": {
     "validate-seed": "node seed/validate-seed.mjs",
     "seed": "node seed/seed.mjs",
+    "test:auth": "node --test tests/auth.uc01-02.test.mjs",
     "test:rules": "node --test tests/firestore.rules.test.mjs && node --test tests/firestore.uc03.rules.test.mjs && node --test tests/firestore.uc05.rules.test.mjs"
   },
   "dependencies": {

@@ -24,9 +24,9 @@ class BoardSummary {
   bool get isArchived => archivedAt != null;
 
   factory BoardSummary.fromDocument(
-    QueryDocumentSnapshot<Map<String, dynamic>> document,
+    DocumentSnapshot<Map<String, dynamic>> document,
   ) {
-    final data = document.data();
+    final data = document.data() ?? const <String, dynamic>{};
     final updatedAtValue = data['updatedAt'];
     final archivedAtValue = data['archivedAt'];
 

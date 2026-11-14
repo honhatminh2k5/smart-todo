@@ -91,6 +91,7 @@ class TaskCardModel {
     String? title,
     double? position,
     bool? isCompleted,
+    List<String>? assigneeIds,
     DateTime? archivedAt,
     DateTime? updatedAt,
   }) {
@@ -102,7 +103,7 @@ class TaskCardModel {
       description: description,
       position: position ?? this.position,
       isCompleted: isCompleted ?? this.isCompleted,
-      assigneeIds: assigneeIds,
+      assigneeIds: assigneeIds ?? this.assigneeIds,
       labelIds: labelIds,
       dueAt: dueAt,
       archivedAt: archivedAt ?? this.archivedAt,

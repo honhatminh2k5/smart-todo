@@ -411,6 +411,30 @@ class FakeCardRepository implements CardRepository {
   }
 
   @override
+  Future<void> setAssignee({
+    required String boardId,
+    required String cardId,
+    required String memberUid,
+    required bool assigned,
+  }) async {
+    _checkWritable();
+    final isMember = (_members[boardId] ?? const <BoardMember>[]).any(
+      (member) => member.uid == memberUid,
+    );
+    if (assigned && !isMember) {
+      throw StateError('Chỉ giao được thẻ cho thành viên của board.');
+    }
+    final card = _find(boardId, cardId);
+    final assignees = card.assigneeIds.where((uid) => uid != memberUid);
+    _put(
+      card.copyWith(
+        assigneeIds: [...assignees, if (assigned) memberUid],
+        updatedAt: DateTime.now(),
+      ),
+    );
+  }
+
+  @override
   Future<void> reorderCards({
     required String boardId,
     required String listId,

@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_todo/features/collaboration/presentation/widgets/assignee_picker_sheet.dart';
+import 'package:smart_todo/features/collaboration/presentation/widgets/card_comments_section.dart';
+import 'package:smart_todo/features/collaboration/presentation/widgets/member_avatar.dart';
 import 'package:smart_todo/features/lists/presentation/providers/list_providers.dart';
 
 import '../../data/card_model.dart';
@@ -11,10 +14,11 @@ import '../card_format.dart';
 import '../providers/card_providers.dart';
 import '../widgets/card_actions.dart';
 
-/// Màn hình xem và sửa nhanh một thẻ (UC05 3a–3g).
+/// Màn hình xem và sửa nhanh một thẻ (UC05 3a–3g, UC06 1a–1d).
 ///
-/// Tiêu đề tự lưu khi ngừng gõ. Mô tả, hạn chót, nhãn, checklist chỉ hiển
-/// thị ở đây; phần chỉnh sửa thuộc chức năng Chi tiết card.
+/// Tiêu đề tự lưu khi ngừng gõ. Chọn người được giao và bình luận ngay tại
+/// đây (UC06). Mô tả, hạn chót, nhãn, checklist chỉ hiển thị; phần chỉnh sửa
+/// thuộc chức năng Chi tiết card.
 class CardDetailScreen extends ConsumerStatefulWidget {
   const CardDetailScreen({
     required this.boardId,
@@ -360,11 +364,35 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         _InfoRow(
           icon: Icons.people_outline_rounded,
           title: 'Người được giao',
-          child: Text(
-            card.assigneeIds.isEmpty
-                ? 'Chưa giao cho ai'
-                : card.assigneeIds.map(nameOf).join(', '),
+          trailing: Icon(
+            Icons.edit_outlined,
+            size: 18,
+            color: colorScheme.onSurfaceVariant,
           ),
+          onTap: () => showAssigneePicker(
+            context,
+            boardId: widget.boardId,
+            cardId: widget.cardId,
+          ),
+          child: card.assigneeIds.isEmpty
+              ? const Text('Chưa giao cho ai · Nhấn để chọn thành viên')
+              : Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final uid in card.assigneeIds)
+                      Chip(
+                        visualDensity: VisualDensity.compact,
+                        avatar: MemberAvatar(
+                          uid: uid,
+                          name: members[uid]?.displayName ?? '',
+                          email: members[uid]?.email ?? '',
+                          radius: 12,
+                        ),
+                        label: Text(nameOf(uid)),
+                      ),
+                  ],
+                ),
         ),
         _InfoRow(
           icon: Icons.checklist_rounded,
@@ -374,11 +402,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                 ? 'Chưa có checklist'
                 : '${card.checklistDone}/${card.checklistTotal} mục đã xong',
           ),
-        ),
-        _InfoRow(
-          icon: Icons.chat_bubble_outline_rounded,
-          title: 'Bình luận',
-          child: Text('${card.commentCount} bình luận'),
         ),
         _InfoRow(
           icon: Icons.notes_rounded,
@@ -396,6 +419,8 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             color: colorScheme.onSurfaceVariant,
           ),
         ),
+        const Divider(height: 32),
+        CardCommentsSection(boardId: widget.boardId, cardId: widget.cardId),
       ],
     );
   }
@@ -406,16 +431,23 @@ class _InfoRow extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.child,
+    this.trailing,
+    this.onTap,
   });
 
   final IconData icon;
   final String title;
   final Widget child;
+  final Widget? trailing;
+
+  /// Nhấn cả hàng để sửa mục này.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
+    final trailing = this.trailing;
+    final row = Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -440,8 +472,15 @@ class _InfoRow extends StatelessWidget {
               ],
             ),
           ),
+          if (trailing != null) ...[const SizedBox(width: 8), trailing],
         ],
       ),
+    );
+    if (onTap == null) return row;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: row,
     );
   }
 }

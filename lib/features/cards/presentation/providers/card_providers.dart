@@ -157,6 +157,21 @@ class CardsController {
     required String cardId,
   }) => _run(() => _repository.archiveCard(boardId: boardId, cardId: cardId));
 
+  /// Giao hoặc bỏ giao thẻ cho một thành viên (UC06 1b).
+  Future<String?> setAssignee({
+    required String boardId,
+    required String cardId,
+    required String memberUid,
+    required bool assigned,
+  }) => _run(
+    () => _repository.setAssignee(
+      boardId: boardId,
+      cardId: cardId,
+      memberUid: memberUid,
+      assigned: assigned,
+    ),
+  );
+
   /// Xóa cần đọc dữ liệu con từ máy chủ nên không có gì được xếp hàng khi
   /// quá thời gian chờ.
   Future<String?> deleteCard({

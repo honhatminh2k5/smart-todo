@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../collaboration/presentation/screens/board_members_screen.dart';
 import '../../lists/presentation/widgets/board_lists_section.dart';
 import '../../lists/presentation/widgets/archived_lists_sheet.dart';
 import '../../search/presentation/screens/board_search_screen.dart';
@@ -10,6 +11,48 @@ class BoardDetailScreen extends StatelessWidget {
   const BoardDetailScreen({required this.boardId, super.key});
 
   final String boardId;
+
+  void _openMembers(BuildContext context) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => BoardMembersScreen(boardId: boardId),
+      ),
+    );
+  }
+
+  /// Bị Owner xóa khỏi board hoặc đã rời board (UC06 2c): Rules từ chối đọc.
+  Widget _accessLost(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Board')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.lock_outline_rounded,
+                size: 52,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Bạn không còn là thành viên của board này nên không thể xem '
+                'nội dung board.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () =>
+                    Navigator.of(context).popUntil((route) => route.isFirst),
+                child: const Text('Về danh sách board'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +69,10 @@ class BoardDetailScreen extends StatelessWidget {
             appBar: AppBar(title: Text('Board')),
             body: const Center(child: CircularProgressIndicator()),
           );
+        }
+        final error = snapshot.error;
+        if (error is FirebaseException && error.code == 'permission-denied') {
+          return _accessLost(context);
         }
         if (snapshot.hasError) {
           return Scaffold(
@@ -61,6 +108,9 @@ class BoardDetailScreen extends StatelessWidget {
         final memberIds = (data['memberIds'] as List<dynamic>? ?? const [])
             .whereType<String>()
             .toList(growable: false);
+        if (currentUid != null && !memberIds.contains(currentUid)) {
+          return _accessLost(context);
+        }
         final archivedAt = data['archivedAt'];
         final theme = Theme.of(context);
 
@@ -90,8 +140,8 @@ class BoardDetailScreen extends StatelessWidget {
                 icon: const Icon(Icons.search_rounded),
               ),
               IconButton(
-                tooltip: 'Cộng tác viên',
-                onPressed: () {},
+                tooltip: 'Thành viên',
+                onPressed: () => _openMembers(context),
                 icon: const Icon(Icons.group_add_outlined),
               ),
               PopupMenuButton<String>(
@@ -136,9 +186,10 @@ class BoardDetailScreen extends StatelessWidget {
                       ),
                       label: Text(isOwner ? 'Owner' : 'Member'),
                     ),
-                    Chip(
+                    ActionChip(
                       avatar: const Icon(Icons.people_outline, size: 18),
                       label: Text('${memberIds.length} thành viên'),
+                      onPressed: () => _openMembers(context),
                     ),
                     if (archivedAt != null)
                       const Chip(

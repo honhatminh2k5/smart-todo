@@ -199,6 +199,23 @@ class FirestoreCardRepository implements CardRepository {
     });
   }
 
+  /// `arrayUnion`/`arrayRemove` để hai người cùng giao việc không ghi đè
+  /// lựa chọn của nhau. Rules từ chối uid không thuộc `memberIds`.
+  @override
+  Future<void> setAssignee({
+    required String boardId,
+    required String cardId,
+    required String memberUid,
+    required bool assigned,
+  }) async {
+    await _cards(boardId).doc(cardId).update({
+      'assigneeIds': assigned
+          ? FieldValue.arrayUnion([memberUid])
+          : FieldValue.arrayRemove([memberUid]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   @override
   Future<void> reorderCards({
     required String boardId,

@@ -59,6 +59,15 @@ abstract interface class CardRepository {
     required double position,
   });
 
+  /// Giao card cho [memberUid] ([assigned] = `true`) hoặc bỏ giao (W16,
+  /// UC06 1b). Chỉ được chọn thành viên hiện tại của board (luật I3).
+  Future<void> setAssignee({
+    required String boardId,
+    required String cardId,
+    required String memberUid,
+    required bool assigned,
+  });
+
   /// Đánh số lại `position` của các card trong list theo [orderedCardIds]
   /// trong một batch; dùng khi hai vị trí liền kề quá sát nhau.
   Future<void> reorderCards({

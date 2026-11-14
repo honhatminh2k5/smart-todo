@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../auth/data/auth_repository.dart';
+import '../../collaboration/presentation/screens/my_invitations_screen.dart';
 import '../data/boards_repository.dart';
 import 'board_detail_screen.dart';
 
@@ -410,6 +411,13 @@ class _BoardsScreenState extends State<BoardsScreen> {
           ],
         ),
         actions: [
+          InvitationsButton(
+            onOpenBoard: (context, boardId) => Navigator.of(context).push<void>(
+              MaterialPageRoute<void>(
+                builder: (_) => BoardDetailScreen(boardId: boardId),
+              ),
+            ),
+          ),
           IconButton(
             tooltip: 'Board đã lưu trữ',
             onPressed: _openArchivedBoards,
